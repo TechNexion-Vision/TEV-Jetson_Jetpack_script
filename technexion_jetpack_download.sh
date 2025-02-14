@@ -324,6 +324,12 @@ create_demo_image (){
 	# copy all machine conf to folder
 	cp -rv tn-*.conf Linux_for_Tegra/
 
+	# add '--check-only' in script
+	cd Linux_for_Tegra/
+	wget -q --no-check-certificate https://ftp.technexion.com/development_resources/NVIDIA/check_orin_nano_sku_20250215.patch -O check_orin_nano_sku_20250215.patch
+	sudo patch -p0 < check_orin_nano_sku_20250215.patch
+	cd ${CUR_DIR}
+
 	# create new demo_image
 	cd Linux_for_Tegra/
 	if [[ ${qspi_only} -eq 1 ]];then
