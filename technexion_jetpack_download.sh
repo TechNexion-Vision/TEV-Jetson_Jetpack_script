@@ -2,19 +2,32 @@
 
 TIME=$(date +'%Y%m%d')
 CUR_DIR="$(pwd)/"
-NV_TAG="jetson_35.3.1"
-BRANCH="tn_l4t-r35.3.1.ga_kernel-5.10"
-TEK_BRANCH="${BRANCH}_TEK-ORIN-a1"
+NV_TAG="jetson_36.4.3"
+BRANCH="tn_l4t-r36.4.ga_kernel-5.15"
+# device tree branch
+BRANCH_DT="tn_l4t-r36.4.3.ga_kernel-5.15"
 
-VALID_TAG=("r35.3.ga")
+VALID_TAG=("r36.4.ga")
 
 USING_TAG=0
 
+# nvidia jetpack source code
+JETPACK="https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.3/release/Jetson_Linux_r36.4.3_aarch64.tbz2/"
+ROOTFS="https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.3/release/Tegra_Linux_Sample-Root-Filesystem_r36.4.3_aarch64.tbz2/"
+PUBLIC="https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.3/sources/public_sources.tbz2/"
+TOOLCHAIN="https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v3.0/toolchain/aarch64--glibc--stable-2022.08-1.tar.bz2"
+
+# source path env
+SRC_DIR="Linux_for_Tegra/source"
+KERNEL_DIR="kernel/kernel-jammy-src"
+KERNEL_OUT="kernel_out"
+DT_DIR="${SRC_DIR}/hardware/nvidia/t23x/nv-public"
+OOT_DIR="${SRC_DIR}/nvidia-oot/"
+BL_CFG="bootloader/generic/cfg"
+PIMNUX_DIR="bootloader/generic/BCT"
+
 get_nvidia_jetpack() {
 	echo -ne "\n### Get nvidia jetpack source code\n"
-	JETPACK="https://developer.nvidia.com/downloads/embedded/l4t/r35_release_v3.1/release/jetson_linux_r35.3.1_aarch64.tbz2/"
-	ROOTFS="https://developer.nvidia.com/downloads/embedded/l4t/r35_release_v3.1/release/tegra_linux_sample-root-filesystem_r35.3.1_aarch64.tbz2/"
-	PUBLIC="https://developer.nvidia.com/downloads/embedded/l4t/r35_release_v3.1/sources/public_sources.tbz2/"
 	HYNIX_16G_DRAM_PATCH_1="https://ftp.technexion.com/development_resources/NVIDIA/.TEK6100-ORIN-NX-hynix/overlay_35.3.1_Dave_20230704.tbz2"
 	HYNIX_16G_DRAM_PATCH_2="https://ftp.technexion.com/development_resources/NVIDIA/.TEK6100-ORIN-NX-hynix/t234-dram-package-35.3.1.tbz2"
 
@@ -35,28 +48,28 @@ get_nvidia_jetpack() {
 	rm -rf jetpack.tbz2 rootfs.tbz2 public.tbz2 dram-patch-1.tbz2 dram-patch-2.tbz2
 
 	cd ${CUR_DIR}
-	echo -ne "done\n"
+	echo -ne "### Get nvidia jetpack source code done\n"
 }
 
 run_nvidia_script_and_sync_code() {
 	echo -ne "\n### Run nvidia script to get require sources\n"
 	cd Linux_for_Tegra/
-	sudo ./apply_binaries.sh
 	sudo ./tools/l4t_flash_prerequisites.sh
+	sudo ./apply_binaries.sh
 
 	echo -ne "\n### Clone nvidia source code\n"
 	# tweak for prevent source_sync from return 1
-	sed -i '80d' source_sync.sh
-	./source_sync.sh -t ${NV_TAG}
+	sed -i '347c\ln -sf ${LDK_DIR}/nvethernetrm ${LDK_DIR}/nvidia-oot/drivers/net/ethernet/nvidia/nvethernet/nvethernetrm' source/source_sync.sh
+	./source/source_sync.sh -t ${NV_TAG}
 	cd ${CUR_DIR}
-	echo -ne "done\n"
+	echo -ne "### Run nvidia script to get require sources done\n"
 }
 
 sync_tn_source_code() {
 	echo -ne "\n### Clone source code from Technexion github\n"
 
 	echo -ne "# kernel\n"
-	cd Linux_for_Tegra/sources/kernel/kernel-5.10/
+	cd ${SRC_DIR}/${KERNEL_DIR}
 	if [[ $USING_SSH -eq 0 ]];then
 		git remote add tn-github https://github.com/TechNexion-Vision/TEV-Jetson_kernel.git
 	else
@@ -72,15 +85,15 @@ sync_tn_source_code() {
 
 	echo -ne "# dts\n"
 	if [[ $SOM == "Orin" ]]; then
-		cd Linux_for_Tegra/sources/hardware/nvidia/platform/t23x/p3768/kernel-dts/
+		cd ${DT_DIR}
 		if [[ $USING_SSH -eq 0 ]];then
 			git remote add tn-github https://github.com/TechNexion-Vision/TEV-JetsonOrin-Nano_device-tree.git
 		else
 			git remote add tn-github git@github.com:TechNexion-Vision/TEV-JetsonOrin-Nano_device-tree.git
 		fi
 	fi
-	git fetch tn-github ${BRANCH}
-	git checkout -b ${BRANCH} tn-github/${BRANCH}
+	git fetch tn-github ${BRANCH_DT}
+	git checkout -b ${BRANCH_DT} tn-github/${BRANCH_DT}
 	git fetch tn-github --tags
 	if [[ $USING_TAG -eq 1 ]];then
 		git reset --hard $TAG
@@ -88,21 +101,21 @@ sync_tn_source_code() {
 	cd ${CUR_DIR}
 
 	echo -ne "# technexion camera drivers\n"
-	cd Linux_for_Tegra/sources/kernel/
+	cd ${OOT_DIR}
 	if [[ $USING_SSH -eq 0 ]];then
-		git clone https://github.com/TechNexion-Vision/TEV-Jetson_Camera_driver.git technexion
+		git submodule add -b ${BRANCH} https://github.com/TechNexion-Vision/TEV-Jetson_Camera_driver.git drivers/media/i2c/technexion
 	else
-		git clone git@github.com:TechNexion-Vision/TEV-Jetson_Camera_driver.git technexion
+		git submodule add -b ${BRANCH} git@github.com:TechNexion-Vision/TEV-Jetson_Camera_driver.git drivers/media/i2c/technexion
 	fi
-	cd technexion
-	git checkout $BRANCH
+	cd drivers/media/i2c/technexion
+	git checkout ${BRANCH}
 	if [[ $USING_TAG -eq 1 ]];then
 		git reset --hard $TAG
 	fi
 	cd ${CUR_DIR}
 
 	echo -ne "# technexion pinmux file(xlsm)\n"
-	cd Linux_for_Tegra/sources/
+	cd ${SRC_DIR}
 	if [[ $SOM == "Orin" ]]; then
 		if [[ $USING_SSH -eq 0 ]];then
 			git clone https://github.com/TechNexion-Vision/TEV-JetsonOrin-Nano_pinmux.git TEK-ORIN_Orin-Nano_pinmux
@@ -110,102 +123,72 @@ sync_tn_source_code() {
 			git clone git@github.com:TechNexion-Vision/TEV-JetsonOrin-Nano_pinmux.git TEK-ORIN_Orin-Nano_pinmux
 		fi
 		cd TEK-ORIN_Orin-Nano_pinmux
-		git checkout ${TEK_BRANCH}
+		git checkout ${BRANCH}
 		if [[ $USING_TAG -eq 1 ]];then
 			git reset --hard ${TEK_TAG}
 		fi
 	fi
 	cd ${CUR_DIR}
 
-	echo -ne "done\n"
+	echo -ne "### Clone source code from Technexion github done\n"
 }
 
 create_gcc_tool_chain () {
 	echo -ne "\n### Download gcc tool chain\n"
-	cd Linux_for_Tegra/sources/kernel/
-	mkdir -p gcc_tool_chain
-	cd gcc_tool_chain/
-	GCC_TOOL_CHAIN="$(pwd)"
-	wget -q --no-check-certificate https://developer.nvidia.com/embedded/jetson-linux/bootlin-toolchain-gcc-93 --tries=10
-	tar -zxf bootlin-toolchain-gcc-93
-	echo -ne "done\n"
+	cd ${SRC_DIR}/kernel/
+	wget -q --no-check-certificate ${TOOLCHAIN} --tries=10 -O toolchain.tar.bz2
+	tar xf toolchain.tar.bz2
+	mv aarch64--glibc--stable-2022.08-1 gcc_tool_chain
+	GCC_TOOL_CHAIN="$(pwd)/gcc_tool_chain"
+	rm -rf toolchain.tar.bz2
+	echo -ne "### Download gcc tool chain done\n"
 	cd ${CUR_DIR}
-}
-
-create_kernel_compile_script () {
-	echo -ne "\n### Download kernel compile script\n"
-	cd Linux_for_Tegra/sources/kernel/kernel-5.10/
-	echo -e "#!/bin/bash -e" > environment_arm64_gcc7.sh
-	echo -e "export GCC_DIR=${GCC_TOOL_CHAIN}" >> environment_arm64_gcc7.sh
-	echo -e "export ARCH=arm64" >> environment_arm64_gcc7.sh
-	echo -e "export CROSS_COMPILE=\${GCC_DIR}/bin/aarch64-buildroot-linux-gnu-" >> environment_arm64_gcc7.sh
-	echo -e "export CROSS_COMPILE_AARCH64_PATH=\${GCC_DIR}/" >> environment_arm64_gcc7.sh
-	chmod 777 environment_arm64_gcc7.sh
-
-	echo -e "#!/bin/bash -e\n" > compile_kernel.sh
-	echo -e "source environment_arm64_gcc7.sh" >> compile_kernel.sh
-	echo -e "make tegra_tn_defconfig\n" >> compile_kernel.sh
-	echo -e "#Compile kernel" >> compile_kernel.sh
-	echo -e "make LOCALVERSION=-tegra -j\$(nproc) Image" >> compile_kernel.sh
-	echo -e "#Compile DTBs" >> compile_kernel.sh
-	echo -e "make LOCALVERSION=-tegra -j\$(nproc) dtbs" >> compile_kernel.sh
-	echo -e "#Compile modules" >> compile_kernel.sh
-	echo -e "make LOCALVERSION=-tegra -j\$(nproc) modules\n" >> compile_kernel.sh
-	echo -e "#Install kernel modules" >> compile_kernel.sh
-	echo -e "mkdir -p ../modules" >> compile_kernel.sh
-	echo -e "cd ../modules" >> compile_kernel.sh
-	echo -e "if [[ ! -f kernel_supplements.tbz2 ]]" >> compile_kernel.sh
-	echo -e "then" >> compile_kernel.sh
-	echo -e "cp -rv ../../../kernel/kernel_supplements.tbz2 ./" >> compile_kernel.sh
-	echo -e "fi\n" >> compile_kernel.sh
-	echo -e "if [[ ! -f kernel_display_supplements.tbz2 ]]" >> compile_kernel.sh
-	echo -e "then" >> compile_kernel.sh
-	echo -e "cp -rv ../../../kernel/kernel_display_supplements.tbz2 ./" >> compile_kernel.sh
-	echo -e "fi\n" >> compile_kernel.sh
-	echo -e "tar -jxf kernel_supplements.tbz2" >> compile_kernel.sh
-	echo -e "tar -jxf kernel_display_supplements.tbz2" >> compile_kernel.sh
-	echo -e "cd ../kernel-5.10" >> compile_kernel.sh
-	echo -e "make LOCALVERSION=-tegra INSTALL_MOD_PATH=../modules modules_install" >> compile_kernel.sh
-	chmod 777 compile_kernel.sh
-
-	cd ${CUR_DIR}
-	echo -ne "done\n"
 }
 
 compile_kernel (){
 	echo -ne "\n### compile kernel\n"
-	cd Linux_for_Tegra/sources/kernel/kernel-5.10/
-	./compile_kernel.sh
+	cd ${SRC_DIR}
+	# add more env
+	echo -e "export GCC_DIR=${GCC_TOOL_CHAIN}" >> kernel_src_build_env.sh
+	echo -e "export ARCH=arm64" >> kernel_src_build_env.sh
+	echo -e "export CROSS_COMPILE=\${GCC_DIR}/bin/aarch64-buildroot-linux-gnu-" >> kernel_src_build_env.sh
+	echo -e "export CROSS_COMPILE_AARCH64_PATH=\${GCC_DIR}/" >> kernel_src_build_env.sh
+	source kernel_src_build_env.sh
+	./nvbuild.sh
 
 	cd ${CUR_DIR}
-	echo -ne "done\n"
+	echo -ne "### compile kernel done\n"
 }
 
-create_demo_image (){
-	echo -ne "\n### create demo_image\n"
+mv_needed_files_for_demo_image(){
+	echo -ne "\n### move needed files for demo_image\n"
 	# copy kernel image
-	sudo cp -rp Linux_for_Tegra/sources/kernel/kernel-5.10/arch/arm64/boot/Image Linux_for_Tegra/kernel/
-	sudo cp -rp Linux_for_Tegra/sources/kernel/kernel-5.10/arch/arm64/boot/Image Linux_for_Tegra/rootfs/boot/
+	sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/${KERNEL_DIR}/arch/arm64/boot/Image Linux_for_Tegra/kernel/
+	sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/${KERNEL_DIR}/arch/arm64/boot/Image Linux_for_Tegra/rootfs/boot/
 	sudo rm -rf Linux_for_Tegra/kernel/Image.gz
 
 	# copy kernel modules and don't forget the origin ones
-	sudo cp -rp Linux_for_Tegra/sources/kernel/modules/lib/modules/ Linux_for_Tegra/rootfs/lib/
+	sudo cp -rp ${SRC_DIR}/kernel/modules/lib/modules/ Linux_for_Tegra/rootfs/lib/
+
 	# copy device-tree
 	if [[ $SOM == "Orin" ]];then
-		sudo cp -rp Linux_for_Tegra/sources/kernel/kernel-5.10/arch/arm64/boot/dts/nvidia/tegra234-p3767-000*-tek-orin-a1.dtb Linux_for_Tegra/kernel/dtb/
-		sudo cp -rp Linux_for_Tegra/sources/kernel/kernel-5.10/arch/arm64/boot/dts/nvidia/tegra234-p3767-000*-tek-orin-a1.dtb Linux_for_Tegra/rootfs/boot/
-		sudo cp -rp Linux_for_Tegra/sources/kernel/kernel-5.10/arch/arm64/boot/dts/nvidia/tegra234-p3767-0003-p3768-0000-a0-*.dtb Linux_for_Tegra/kernel/dtb/
-		sudo cp -rp Linux_for_Tegra/sources/kernel/kernel-5.10/arch/arm64/boot/dts/nvidia/tegra234-p3767-0003-p3768-0000-a0-*.dtb Linux_for_Tegra/rootfs/boot/
+		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-tek-orin+p3767-000*-nv.dtb Linux_for_Tegra/kernel/dtb/
+		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-tek-orin+p3767-000*-nv.dtb Linux_for_Tegra/rootfs/boot/
+		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-p3768-0000+p3767-000*-nv.dtb Linux_for_Tegra/kernel/dtb/
+		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-p3768-0000+p3767-000*-nv.dtb Linux_for_Tegra/rootfs/boot/
+		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-p3767-camera-p3768-vls-*.dtbo Linux_for_Tegra/kernel/dtb/
+		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-p3767-camera-p3768-vls-*.dtbo Linux_for_Tegra/rootfs/boot/
 	fi
+
 	# copy pinmux file
 	if [[ $SOM == "Orin" ]]; then
-		sudo cp -rp Linux_for_Tegra/sources/TEK-ORIN_Orin-Nano_pinmux/Orin-tek-orin-a1-gpio-default.dtsi Linux_for_Tegra/bootloader/
-		sudo cp -rp Linux_for_Tegra/sources/TEK-ORIN_Orin-Nano_pinmux/Orin-tek-orin-a1-pinmux.dtsi Linux_for_Tegra/bootloader/t186ref/BCT/
-		# change firewall rule for PWM7
-		sudo sed -i '25654d' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
-		sudo sed -i '25654i \ \ \ \ \ \ \ \ \ \ \ \ value = <0x0010000a>;' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
-		sudo sed -i '25659d' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
-		sudo sed -i '25659i \ \ \ \ \ \ \ \ \ \ \ \ value = <0x0010000a>;' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
+		sudo cp -rp ${SRC_DIR}/TEK-ORIN_Orin-Nano_pinmux/Orin-tek-orin-a1-gpio-default.dtsi Linux_for_Tegra/bootloader/
+		sudo cp -rp ${SRC_DIR}/TEK-ORIN_Orin-Nano_pinmux/Orin-tek-orin-a1-pinmux.dtsi Linux_for_Tegra/${PIMNUX_DIR}/
+		# tweak for change firewall rule for PWM7
+		sudo sed -i '25653d' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
+		sudo sed -i '25653i \ \ \ \ \ \ \ \ \ \ \ \ value = <0x0010000a>;' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
+		sudo sed -i '25658d' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
+		sudo sed -i '25658i \ \ \ \ \ \ \ \ \ \ \ \ value = <0x0010000a>;' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
 	fi
 
 	# copy install VizionViewer service
@@ -228,7 +211,10 @@ create_demo_image (){
 	if [[ $USING_TAG -eq 1 ]];then
 		case $TAG in
 			r35.3.ga)
-				VV_URL='https://ftp.technexion.com/vizionviewer/linux_nvidia_jetson/focal/vizionviewer_24.05.1_jetson_focal.tar.xz'
+				VV_URL='https://download.technexion.com/vizionviewer/archived/linux_nvidia_jetson/stable/vizionviewer_24.05.1_jetson_stable.tar.xz'
+				;;
+			r36.4.ga)
+				VV_URL='https://download.technexion.com/vizionviewer/archived/linux_nvidia_jetson/stable/vizionviewer_25.03.1_jetson_stable.tar.xz'
 				;;
 			*)
 				# Let VV_URL empty, cause error when try to download
@@ -236,11 +222,11 @@ create_demo_image (){
 		esac
 	else
 		# download the lastest VizionViewer
-		VV_URL='https://ftp.technexion.com/vizionviewer/linux_nvidia_jetson/focal/'
+		VV_URL='https://download.technexion.com/vizionviewer/archived/linux_nvidia_jetson/stable/'
 		VV_LIST=()
 		VV_LIST_VER=()
 		MAX_VER=0
-		VV=$(curl ${VV_URL}|grep -Poi "href=\"vizionviewer_.*_focal.tar.xz\"" | cut -d '"' -f 2)
+		VV=$(curl ${VV_URL}|grep -Poi "href=\"vizionviewer_.*_stable.tar.xz\"" | cut -d '"' -f 2)
 		for i in ${VV[@]}
 		do
 			if [[ $i == vizionviewer* ]];then
@@ -285,7 +271,7 @@ create_demo_image (){
 
 	# copy change boot config
 	cd Linux_for_Tegra/rootfs/boot/extlinux/
-	# close quiet for more dmesg
+	# tweak for close quiet for more dmesg
 	sudo sed -i 's/APPEND \${cbootargs} quiet/APPEND \${cbootargs}/' extlinux.conf
 	cd ${CUR_DIR}
 
@@ -295,16 +281,16 @@ create_demo_image (){
 	sed -zi 's|#show_eula\n|show_eula\n|' Linux_for_Tegra/tools/l4t_create_default_user.sh
 
 	# change background to TecnNexion logo
-	wget -c -t 5 --no-check-certificate https://ftp.technexion.com/development_resources/.technexion_logo/PPT2.jpg
+	wget -c -t 5 --no-check-certificate https://download.technexion.com/development_resources/.technexion_logo/PPT2.jpg
 	sudo mv PPT2.jpg Linux_for_Tegra/rootfs/usr/share/backgrounds/
 	sudo sed -i 's|nv_background="/usr/share/backgrounds/NVIDIA_Wallpaper.jpg"|nv_background="/usr/share/backgrounds/PPT2.jpg"|' Linux_for_Tegra/rootfs/etc/xdg/autostart/nvbackground.sh
 
 	# tweak mb2 dts to make HDMI support 4K
-	sed -i '8i\\' Linux_for_Tegra/bootloader/t186ref/BCT/tegra234-mb2-bct-scr-p3767-0000.dts
-	sed -i '8i\ \ \ \ \ \ \ \ };' Linux_for_Tegra/bootloader/t186ref/BCT/tegra234-mb2-bct-scr-p3767-0000.dts
-	sed -i '8i\ \ \ \ \ \ \ \ \ \ \ \ value = <0x38009696>;' Linux_for_Tegra/bootloader/t186ref/BCT/tegra234-mb2-bct-scr-p3767-0000.dts
-	sed -i '8i\ \ \ \ \ \ \ \ \ \ \ \ exclusion-info = <2>;' Linux_for_Tegra/bootloader/t186ref/BCT/tegra234-mb2-bct-scr-p3767-0000.dts
-	sed -i '8i\ \ \ \ \ \ \ \ reg@322 { /* GPIO_M_SCR_00_0 */' Linux_for_Tegra/bootloader/t186ref/BCT/tegra234-mb2-bct-scr-p3767-0000.dts
+#	sed -i '8i\\' Linux_for_Tegra/${PIMNUX_DIR}/tegra234-mb2-bct-scr-p3767-0000.dts
+#	sed -i '8i\ \ \ \ \ \ \ \ };' Linux_for_Tegra/${PIMNUX_DIR}/tegra234-mb2-bct-scr-p3767-0000.dts
+#	sed -i '8i\ \ \ \ \ \ \ \ \ \ \ \ value = <0x38009696>;' Linux_for_Tegra/${PIMNUX_DIR}/tegra234-mb2-bct-scr-p3767-0000.dts
+#	sed -i '8i\ \ \ \ \ \ \ \ \ \ \ \ exclusion-info = <2>;' Linux_for_Tegra/${PIMNUX_DIR}/tegra234-mb2-bct-scr-p3767-0000.dts
+#	sed -i '8i\ \ \ \ \ \ \ \ reg@322 { /* GPIO_M_SCR_00_0 */' Linux_for_Tegra/${PIMNUX_DIR}/tegra234-mb2-bct-scr-p3767-0000.dts
 
 	# download disk image creator script
 	if [[ $USING_SSH -eq 0 ]];then
@@ -329,35 +315,38 @@ create_demo_image (){
 	wget -q --no-check-certificate https://ftp.technexion.com/development_resources/NVIDIA/check_orin_nano_sku_20250215.patch -O check_orin_nano_sku_20250215.patch
 	sudo patch -p0 < check_orin_nano_sku_20250215.patch
 	cd ${CUR_DIR}
-
+	echo -ne "### move needed files for demo_image done\n"
+}
+create_demo_image (){
+	echo -ne "\n### create demo_image\n"
 	# create new demo_image
 	cd Linux_for_Tegra/
 	if [[ ${qspi_only} -eq 1 ]];then
 		sudo ./tools/kernel_flash/l4t_initrd_flash.sh \
-			-p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml --no-systemimg" \
+			-p "-c ${BL_CFG}/flash_t234_qspi.xml --no-systemimg" \
 			--showlogs --no-flash --network usb0 ${board_conf} internal
 	else
 		sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device ${rootfs_dev_p1[0]} -c tools/kernel_flash/flash_l4t_external.xml \
-			-p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml" \
+			-p "-c ${BL_CFG}/cfg/flash_t234_qspi.xml" \
 			--showlogs --no-flash --network usb0 ${board_conf} internal
 	fi
 	cd ${CUR_DIR}
-	echo -ne "done\n"
+	echo -ne "### create demo_image done\n"
 }
 
 usage() {
 	echo -e "$0 \ndownload the Technexion Jetpack -b <baseboard>" 1>&2
-	echo "-b: baseboard <TEK6020-ORIN-NANO/ TEK6040-ORIN-NANO/ TEK6070-ORIN-NX/ TEK6100-ORIN-NX/ TEK6100-ORIN-NX-HYNIX" 1>&2
+	echo "-b: baseboard <TEK6020-ORIN-NANO/ TEK6040-ORIN-NANO/ TEK6070-ORIN-NX/ TEK6100-ORIN-NX" 1>&2
 	echo "               TEV-RPI22-TEVI/ TEV-RPI22-TEVS/ VLS3-ORIN-EVK-VLS3>" 1>&2
 	echo "" 1>&2
 	echo "Jetson Orin series:" 1>&2
-	echo "TEK6020-ORIN-NANO| TEK6040-ORIN-NANO| TEK6070-ORIN-NX| TEK6100-ORIN-NX| TEK6100-ORIN-NX-HYNIX" 1>&2
+	echo "TEK6020-ORIN-NANO| TEK6040-ORIN-NANO| TEK6070-ORIN-NX| TEK6100-ORIN-NX" 1>&2
 	echo "" 1>&2
 	echo "Jetson Orin EVK series:" 1>&2
 	echo "TEV-RPI22-TEVI| TEV-RPI22-TEVS| VLS3-ORIN-EVK-VLS3" 1>&2
 	echo "" 1>&2
 	echo "-t: tag for sync code:" 1>&2
-	echo "r35.3.ga" 1>&2
+	echo "${VALID_TAG}" 1>&2
 	echo "" 1>&2
 	echo "--qspi-only: do not create/ flash rootfs, for qspi image only" 1>&2
 	exit 1
@@ -423,9 +412,9 @@ do_job () {
 	create_kernel_compile_script
 	compile_kernel
 
+	mv_needed_files_for_demo_image
 	create_demo_image
 
-	cd Linux_for_Tegra/
 	cd ${CUR_DIR}
 	echo -ne "\n### Finish\n"
 }
