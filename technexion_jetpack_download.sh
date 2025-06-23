@@ -409,7 +409,6 @@ do_job () {
 	sync_tn_source_code
 	create_gcc_tool_chain
 
-	create_kernel_compile_script
 	compile_kernel
 
 	mv_needed_files_for_demo_image
