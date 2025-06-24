@@ -330,7 +330,7 @@ create_demo_image (){
 			--showlogs --no-flash --network usb0 ${board_conf} internal
 	else
 		sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device ${rootfs_dev_p1[0]} -c tools/kernel_flash/flash_l4t_external.xml \
-			-p "-c ${BL_CFG}/cfg/flash_t234_qspi.xml" \
+			-p "-c ${BL_CFG}/flash_t234_qspi.xml" \
 			--showlogs --no-flash --network usb0 ${board_conf} internal
 	fi
 	cd ${CUR_DIR}
