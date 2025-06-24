@@ -139,7 +139,6 @@ create_gcc_tool_chain () {
 	wget -q --no-check-certificate ${TOOLCHAIN} --tries=10 -O toolchain.tar.bz2
 	tar xf toolchain.tar.bz2
 	mv aarch64--glibc--stable-2022.08-1 gcc_tool_chain
-	GCC_TOOL_CHAIN="$(pwd)/gcc_tool_chain"
 	rm -rf toolchain.tar.bz2
 	echo -ne "### Download gcc tool chain done\n"
 	cd ${CUR_DIR}
@@ -148,6 +147,7 @@ create_gcc_tool_chain () {
 compile_kernel (){
 	echo -ne "\n### compile kernel\n"
 	cd ${SRC_DIR}
+	GCC_TOOL_CHAIN="$(pwd)/kernel/gcc_tool_chain"
 	# update kernel config
 	sed -zi 's|KERNEL_DEF_CONFIG="defconfig"\n|KERNEL_DEF_CONFIG="tegra_tn_defconfig"\n|' kernel_src_build_env.sh
 	# add more env
@@ -155,8 +155,12 @@ compile_kernel (){
 	echo -e "export ARCH=arm64" >> kernel_src_build_env.sh
 	echo -e "export CROSS_COMPILE=\${GCC_DIR}/bin/aarch64-buildroot-linux-gnu-" >> kernel_src_build_env.sh
 	echo -e "export CROSS_COMPILE_AARCH64_PATH=\${GCC_DIR}/" >> kernel_src_build_env.sh
-	source kernel_src_build_env.sh
+	echo -e "export INSTALL_MOD_PATH=${CUR_DIR}/Linux_for_Tegra/rootfs/" >> kernel_src_build_env.sh
+
+	# build kernel, in-tree and out-of-tree modules
 	./nvbuild.sh
+	# install kernal, in-tree and out-of-tree modules
+	./nvbuild.sh -i
 
 	cd ${CUR_DIR}
 	echo -ne "### compile kernel done\n"
@@ -169,17 +173,14 @@ mv_needed_files_for_demo_image(){
 	sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/${KERNEL_DIR}/arch/arm64/boot/Image Linux_for_Tegra/rootfs/boot/
 	sudo rm -rf Linux_for_Tegra/kernel/Image.gz
 
-	# copy kernel modules and don't forget the origin ones
-	sudo cp -rp ${SRC_DIR}/kernel/modules/lib/modules/ Linux_for_Tegra/rootfs/lib/
 
 	# copy device-tree
 	if [[ $SOM == "Orin" ]];then
-		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-tek-orin+p3767-000*-nv.dtb Linux_for_Tegra/kernel/dtb/
-		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-tek-orin+p3767-000*-nv.dtb Linux_for_Tegra/rootfs/boot/
-		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-p3768-0000+p3767-000*-nv.dtb Linux_for_Tegra/kernel/dtb/
+		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/* Linux_for_Tegra/kernel/dtb/
+		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*tek* Linux_for_Tegra/rootfs/boot/
+		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*tevs* Linux_for_Tegra/rootfs/boot/
+		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*vls* Linux_for_Tegra/rootfs/boot/
 		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-p3768-0000+p3767-000*-nv.dtb Linux_for_Tegra/rootfs/boot/
-		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-p3767-camera-p3768-vls-*.dtbo Linux_for_Tegra/kernel/dtb/
-		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-p3767-camera-p3768-vls-*.dtbo Linux_for_Tegra/rootfs/boot/
 	fi
 
 	# copy pinmux file
