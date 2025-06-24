@@ -148,6 +148,8 @@ create_gcc_tool_chain () {
 compile_kernel (){
 	echo -ne "\n### compile kernel\n"
 	cd ${SRC_DIR}
+	# update kernel config
+	sed -zi 's|KERNEL_DEF_CONFIG="defconfig"\n|KERNEL_DEF_CONFIG="tegra_tn_defconfig"\n|' kernel_src_build_env.sh
 	# add more env
 	echo -e "export GCC_DIR=${GCC_TOOL_CHAIN}" >> kernel_src_build_env.sh
 	echo -e "export ARCH=arm64" >> kernel_src_build_env.sh
