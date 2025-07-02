@@ -218,7 +218,7 @@ mv_needed_files_for_demo_image(){
 				VV_URL='https://download.technexion.com/vizionviewer/archived/linux_nvidia_jetson/stable/vizionviewer_24.05.1_jetson_stable.tar.xz'
 				;;
 			r36.4.ga)
-				VV_URL='https://download.technexion.com/vizionviewer/archived/linux_nvidia_jetson/stable/vizionviewer_25.03.1_jetson_stable.tar.xz'
+				VV_URL='https://download.technexion.com/vizionviewer/linux_arm64/vizionviewer-25.06.1-linuxarm64.tar.xz'
 				;;
 			*)
 				# Let VV_URL empty, cause error when try to download
@@ -226,11 +226,11 @@ mv_needed_files_for_demo_image(){
 		esac
 	else
 		# download the lastest VizionViewer
-		VV_URL='https://download.technexion.com/vizionviewer/archived/linux_nvidia_jetson/stable/'
+		VV_URL='https://download.technexion.com/vizionviewer/linux_arm64/'
 		VV_LIST=()
 		VV_LIST_VER=()
 		MAX_VER=0
-		VV=$(curl ${VV_URL}|grep -Poi "href=\"vizionviewer_.*_stable.tar.xz\"" | cut -d '"' -f 2)
+		VV=$(curl ${VV_URL}|grep -Poi "href=\"vizionviewer-.*-linuxarm64.tar.xz\"" | cut -d '"' -f 2)
 		for i in ${VV[@]}
 		do
 			if [[ $i == vizionviewer* ]];then
@@ -240,7 +240,7 @@ mv_needed_files_for_demo_image(){
 
 		for i in ${VV_LIST[@]}
 		do
-			VV_LIST_VER+=($(echo $i|grep -Poi "_[\d|\.]*"| sed 's|_||g'| sed 's|\.||g'))
+			VV_LIST_VER+=($(echo $i|grep -Poi "\-[\d|\.]*"| sed 's|-||g'| sed 's|\.||g'))
 		done
 
 		for i in ${VV_LIST_VER[@]}
