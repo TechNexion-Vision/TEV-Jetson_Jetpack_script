@@ -209,6 +209,7 @@ mv_needed_files_for_demo_image(){
 	cd ${CUR_DIR}
 	sudo cp -rp VizionViewer/etc/ Linux_for_Tegra/rootfs/
 	sudo cp -rp VizionViewer/usr/ Linux_for_Tegra/rootfs/
+	sudo cp -rp VizionViewer/preinstall_vizionviewer.sh ./
 	rm -rf VizionViewer/
 
 	# dwonload VizionViewer
@@ -254,11 +255,16 @@ mv_needed_files_for_demo_image(){
 		do
 			if [[ ${VV_LIST_VER[$i]} == $MAX_VER ]];then
 				VV_URL+=${VV_LIST[$i]}
+				VV_FILE=${VV_LIST[$i]}
 			fi
 		done
 	fi
 	wget -c -t --no-check-certificate ${VV_URL}
-	sudo mv vizionviewer*.tar.xz Linux_for_Tegra/rootfs/usr/share/vizionviewer/
+	tar -xJf ${VV_FILE}
+	mv *.deb Linux_for_Tegra/rootfs/usr/share/vizionviewer/
+	# install vizionviewer in rootfs
+	sudo ./preinstall_vizionviewer.sh
+	rm ${VV_FILE}
 
 	# copy QCA9377 firmware from github
 	git clone https://git.codelinaro.org/clo/ath-firmware/ath10k-firmware.git QCA9377_WIFI
