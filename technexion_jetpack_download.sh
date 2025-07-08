@@ -261,10 +261,18 @@ mv_needed_files_for_demo_image(){
 	fi
 	wget -c -t --no-check-certificate ${VV_URL}
 	tar -xJf ${VV_FILE}
-	mv *.deb Linux_for_Tegra/rootfs/usr/share/vizionviewer/
+	sudo mv *.deb Linux_for_Tegra/rootfs/usr/share/vizionviewer/
+
+	# download matched 8_cam_demo
+	DM_VER=$(echo "${VV_FILE}" | cut -d '-' -f 2)
+	DM_FILE='jetpack_8_cam_demo_patch_for_'${DM_VER}'.tar.xz'
+	DM_URL='https://download.technexion.com/vizionviewer/linux_arm64/'${DM_FILE}
+	wget -c -t --no-check-certificate ${DM_URL}
+	sudo mv ${DM_FILE} Linux_for_Tegra/rootfs/
+
 	# install vizionviewer in rootfs
 	sudo ./preinstall_vizionviewer.sh
-	rm ${VV_FILE}
+	sudo rm ${VV_FILE} Linux_for_Tegra/rootfs/${DM_FILE}
 
 	# copy QCA9377 firmware from github
 	git clone https://git.codelinaro.org/clo/ath-firmware/ath10k-firmware.git QCA9377_WIFI
@@ -327,6 +335,7 @@ mv_needed_files_for_demo_image(){
 	cd ${CUR_DIR}
 	echo -ne "### move needed files for demo_image done\n"
 }
+
 create_demo_image (){
 	echo -ne "\n### create demo_image\n"
 	# create new demo_image
