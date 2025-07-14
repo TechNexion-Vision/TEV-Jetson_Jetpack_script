@@ -28,9 +28,6 @@ PIMNUX_DIR="bootloader/generic/BCT"
 
 get_nvidia_jetpack() {
 	echo -ne "\n### Get nvidia jetpack source code\n"
-	HYNIX_16G_DRAM_PATCH_1="https://ftp.technexion.com/development_resources/NVIDIA/.TEK6100-ORIN-NX-hynix/overlay_35.3.1_Dave_20230704.tbz2"
-	HYNIX_16G_DRAM_PATCH_2="https://ftp.technexion.com/development_resources/NVIDIA/.TEK6100-ORIN-NX-hynix/t234-dram-package-35.3.1.tbz2"
-
 	wget $JETPACK -q --tries=10 -O jetpack.tbz2
 	wget $ROOTFS -q --tries=10 -O rootfs.tbz2
 	wget $PUBLIC -q --tries=10 -O public.tbz2
@@ -39,14 +36,7 @@ get_nvidia_jetpack() {
 	tar -jxf public.tbz2
 	sudo tar -jxf rootfs.tbz2 -C Linux_for_Tegra/rootfs
 
-	# overlay patch from NVIDIA, cover ORIN-NX 16G with hynix dram
-	wget -q --no-check-certificate $HYNIX_16G_DRAM_PATCH_1 -O dram-patch-1.tbz2
-	wget -q --no-check-certificate $HYNIX_16G_DRAM_PATCH_2 -O dram-patch-2.tbz2
-	tar -jxf dram-patch-1.tbz2
-	tar -jxf dram-patch-2.tbz2
-
-	rm -rf jetpack.tbz2 rootfs.tbz2 public.tbz2 dram-patch-1.tbz2 dram-patch-2.tbz2
-
+	rm -rf jetpack.tbz2 rootfs.tbz2 public.tbz2
 	cd ${CUR_DIR}
 	echo -ne "### Get nvidia jetpack source code done\n"
 }
@@ -328,10 +318,6 @@ mv_needed_files_for_demo_image(){
 	# copy all machine conf to folder
 	cp -rv tn-*.conf Linux_for_Tegra/
 
-	# add '--check-only' in script
-	cd Linux_for_Tegra/
-	wget -q --no-check-certificate https://ftp.technexion.com/development_resources/NVIDIA/check_orin_nano_sku_20250215.patch -O check_orin_nano_sku_20250215.patch
-	sudo patch -p0 < check_orin_nano_sku_20250215.patch
 	cd ${CUR_DIR}
 	echo -ne "### move needed files for demo_image done\n"
 }
