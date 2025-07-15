@@ -211,6 +211,7 @@ mv_needed_files_for_demo_image(){
 				;;
 			r36.4.ga)
 				VV_URL='https://download.technexion.com/vizionviewer/linux_arm64/vizionviewer-25.06.1-linuxarm64.tar.xz'
+				DM_URL='https://download.technexion.com/vizionviewer/linux_arm64/jetpack_8_cam_demo_patch_for_25.06.1.tar.xz'
 				;;
 			*)
 				# Let VV_URL empty, cause error when try to download
