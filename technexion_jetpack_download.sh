@@ -97,6 +97,7 @@ sync_tn_source_code() {
 	else
 		git submodule add -b ${BRANCH} git@github.com:TechNexion-Vision/TEV-Jetson_Camera_driver.git drivers/media/i2c/technexion
 	fi
+	echo 'obj-m += technexion/' >> drivers/media/i2c/Makefile
 	cd drivers/media/i2c/technexion
 	git checkout ${BRANCH}
 	if [[ $USING_TAG -eq 1 ]];then
