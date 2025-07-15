@@ -381,11 +381,6 @@ setup_env_vars () {
 			rootfs_dev=("NVMe" "USB")
 			rootfs_dev_p1=("nvme0n1p1" "sda1")
 			;;
-		TEK6100-ORIN-NX-HYNIX)
-			board_conf="tn-tek6100-orin-nx-hynix"
-			rootfs_dev=("NVMe" "USB")
-			rootfs_dev_p1=("nvme0n1p1" "sda1")
-			;;
 		TEV-RPI22-TEVI)
 			board_conf="tn-tev-rpi22-tevi"
 			rootfs_dev=("SD" "USB")
