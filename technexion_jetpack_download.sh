@@ -331,11 +331,11 @@ create_demo_image (){
 	if [[ ${qspi_only} -eq 1 ]];then
 		sudo ./tools/kernel_flash/l4t_initrd_flash.sh \
 			-p "-c ${BL_CFG}/flash_t234_qspi.xml --no-systemimg" \
-			--showlogs --no-flash --network usb0 ${board_conf} internal
+			--showlogs ${flash_opt} --network usb0 ${board_conf} internal
 	else
 		sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device ${rootfs_dev_p1[0]} -c tools/kernel_flash/flash_l4t_external.xml \
 			-p "-c ${BL_CFG}/flash_t234_qspi.xml" \
-			--showlogs --no-flash --network usb0 ${board_conf} internal
+			--showlogs ${flash_opt} --network usb0 ${board_conf} internal
 	fi
 	cd ${CUR_DIR}
 	echo -ne "### create demo_image done\n"
@@ -356,6 +356,9 @@ usage() {
 	echo "${VALID_TAG}" 1>&2
 	echo "" 1>&2
 	echo "--qspi-only: do not create/ flash rootfs, for qspi image only" 1>&2
+	echo "" 1>&2
+	echo "flash options: <--flash-only/--build-flash/--no-flash>" 1>&2
+	echo "" 1>&2
 	exit 1
 }
 
@@ -422,6 +425,7 @@ do_job () {
 
 # default variables
 qspi_only=0
+flash_opt="--no-flash"
 
 ### Script start from here
 set -e
@@ -461,6 +465,12 @@ while getopts ":b:t:-:" o; do
 	-) case ${OPTARG} in
 		qspi-only)
 			qspi_only=1
+			;;
+		flash-only|no-flash)
+			flash_opt="--${OPTARG}"
+			;;
+		build-flash)
+			flash_opt=""
 			;;
 		*) usage allunknown 1; ;;
 		esac;;
