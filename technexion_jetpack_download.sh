@@ -343,14 +343,10 @@ create_demo_image (){
 
 usage() {
 	echo -e "$0 \ndownload the Technexion Jetpack -b <baseboard>" 1>&2
-	echo "-b: baseboard <TEK6020-ORIN-NANO/ TEK6040-ORIN-NANO/ TEK6070-ORIN-NX/ TEK6100-ORIN-NX" 1>&2
-	echo "               TEV-RPI22-TEVI/ TEV-RPI22-TEVS/ VLS3-ORIN-EVK-VLS3>" 1>&2
+	echo "-b: baseboard <TEK6040-ORIN-NANO/ TEK6100-ORIN-NX>" 1>&2
 	echo "" 1>&2
 	echo "Jetson Orin series:" 1>&2
-	echo "TEK6020-ORIN-NANO| TEK6040-ORIN-NANO| TEK6070-ORIN-NX| TEK6100-ORIN-NX" 1>&2
-	echo "" 1>&2
-	echo "Jetson Orin EVK series:" 1>&2
-	echo "TEV-RPI22-TEVI| TEV-RPI22-TEVS| VLS3-ORIN-EVK-VLS3" 1>&2
+	echo "TEK6040-ORIN-NANO| TEK6100-ORIN-NX" 1>&2
 	echo "" 1>&2
 	echo "-t: tag for sync code:" 1>&2
 	echo "${VALID_TAG}" 1>&2
@@ -364,18 +360,8 @@ usage() {
 
 setup_env_vars () {
 	case $1 in
-		TEK6020-ORIN-NANO)
-			board_conf="tn-tek6020-orin-nano"
-			rootfs_dev=("NVMe" "USB")
-			rootfs_dev_p1=("nvme0n1p1" "sda1")
-			;;
 		TEK6040-ORIN-NANO)
 			board_conf="tn-tek6040-orin-nano"
-			rootfs_dev=("NVMe" "USB")
-			rootfs_dev_p1=("nvme0n1p1" "sda1")
-			;;
-		TEK6070-ORIN-NX)
-			board_conf="tn-tek6070-orin-nx"
 			rootfs_dev=("NVMe" "USB")
 			rootfs_dev_p1=("nvme0n1p1" "sda1")
 			;;
@@ -383,21 +369,6 @@ setup_env_vars () {
 			board_conf="tn-tek6100-orin-nx"
 			rootfs_dev=("NVMe" "USB")
 			rootfs_dev_p1=("nvme0n1p1" "sda1")
-			;;
-		TEV-RPI22-TEVI)
-			board_conf="tn-tev-rpi22-tevi"
-			rootfs_dev=("SD" "USB")
-			rootfs_dev_p1=("mmcblk1p1" "sda1")
-			;;
-		TEV-RPI22-TEVS)
-			board_conf="tn-tev-rpi22-tevs"
-			rootfs_dev=("SD" "USB")
-			rootfs_dev_p1=("mmcblk1p1" "sda1")
-			;;
-		VLS3-ORIN-EVK-VLS3)
-			board_conf="tn-vls3-orin-evk-vls3"
-			rootfs_dev=("SD" "USB")
-			rootfs_dev_p1=("mmcblk1p1" "sda1")
 			;;
 		*)
 			echo -e "invalid baseboard option!!\n"
@@ -488,8 +459,6 @@ fi
 echo valid input: b=$b
 
 if [[ $b == *"ORIN"* ]]; then
-	SOM=Orin
-elif [[ $b == *"RPI22"* ]]; then
 	SOM=Orin
 fi
 
