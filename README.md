@@ -6,10 +6,8 @@ This script contains a complete system package that enables your Jeston Jetpack 
 
 [TEK-ORIN](https://www.technexion.com/products/embedded-computing/aivision/tek6040-orin-nano/)
 
-[Orin Nano EVK](https://www.technexion.com/products/embedded-vision/evk/vls3-orin-evk/)
-
 ## Full instruction:
-[Technexion document 360](https://developer.technexion.com/docs/host-environment-setting-1)
+[Technexion portal](https://developer.technexion.com/docs/embedded-software/linux/nvidia-jetpack/usage-guides/jetpack620/host-environment-setting)
 
 ## 1. Prepare ubuntu environment
 Download Ubuntu 20.04/ 22.04 iso file from [ubuntu web site](https://ubuntu.com/download/desktop).
@@ -42,41 +40,34 @@ $ cd <nvidia_folder>
 ### run the script
 ```Bash
 # Run the script to download Jetpack and Technexion sources
-# example1:
+# example:
 $ ./technexion_jetpack_download.sh -b TEK6100-ORIN-NX
-# example2:
-$ ./technexion_jetpack_download.sh -b VLS3-ORIN-EVK-VLS3
 ```
+
 ```bash
 # you can check all the option once you enter the wrong option.
 $ ./technexion_jetpack_download.sh 
 download the Technexion Jetpack -b <baseboard>
--b: baseboard <TEK6020-ORIN-NANO/ TEK6040-ORIN-NANO/ TEK6070-ORIN-NX/ TEK6100-ORIN-NX
-               TEV-RPI22-TEVI/ TEV-RPI22-TEVS/ VLS3-ORIN-EVK-VLS3/ VLS3-ORIN-EVK-VLI>
+-b: baseboard <TEK6040-ORIN-NANO/ TEK6100-ORIN-NX>
 
 Jetson Orin series:
-TEK6020-ORIN-NANO| TEK6040-ORIN-NANO| TEK6070-ORIN-NX| TEK6100-ORIN-NX
+TEK6040-ORIN-NANO| TEK6100-ORIN-NX
 
-Jetson Orin EVK series:
-TEV-RPI22-TEVI| TEV-RPI22-TEVS| VLS3-ORIN-EVK-VLS3| VLS3-ORIN-EVK-VLI
-
--t: tag for sync code <>
+-t: tag for sync code:
+r36.4.ga
 
 --qspi-only: do not create/ flash rootfs, for qspi image only
+
+flash options: <--flash-only/--build-flash/--no-flash>
 ```
 
 ## 3. Flash demo image from TEV-Jetpack
-
-### Go to the main folder
-```Bash
-$ cd <nvidia_folder>/Linux_for_Tegra/
-```
 
 ### Enter Recovery mode
 1. **Connect** to computer via **M-USB1**.
 2. Press **'Recovery**' button and '**Reset**' button **at the same time**.
 3. Release '**Reset**' button.
-4. Relesee '**Recovery**' button.
+4. Release '**Recovery**' button.
 5. Check wether the device is connected.
 ```Bash
 $ lsusb
@@ -84,23 +75,9 @@ Bus 001 Device 012: ID 0955:7e19 NVIDIA Corp. APX
 ```
 
 ### Flash demo image from L4T
-* For Orin-Nano/ NX:
-
-|  Product Name   | board_conf  | default storage |
-|  ----  | ----  | ---- |
-| TEK6100-ORIN-NX  | tn-tek6100-orin-nx | nvme0n1p1 |
-| TEK6070-ORIN-NX  | tn-tek6070-orin-nx | nvme0n1p1 |
-| TEK6040-ORIN-NANO  | tn-tek6040-orin-nano | nvme0n1p1 |
-| TEK6020-ORIN-NANO  | tn-tek6020-orin-nano | nvme0n1p1 |
-| VLS3-ORIN-EVK-VLS3  | tn-vls3-orin-evk-vls3 | mmcblk1p1 |
-| TEV-RPI22-TEVI  | tn-tev-rpi22-tevi | mmcblk1p1 |
-| TEV-RPI22-TEVS  | tn-tev-rpi22-tevS | mmcblk1p1 |
-
 ```Bash
-# Please set the conf according to above table (<storage>, <board_conf>)
-$ sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device <storage> -c tools/kernel_flash/flash_l4t_external.xml \
-	-p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml" \
-	--showlogs --flash-only --network usb0 <board_conf> internal
+# Use flash option `--flash-only`
+$ ./technexion_jetpack_download.sh -b <baseboard> --flash-only
 ```
 # Want for more guide ? 
-click here !! [Technexion document 360](https://developer.technexion.com/docs/host-environment-setting-1)
+click here !! [Technexion portal](https://developer.technexion.com/docs/embedded-software/linux/nvidia-jetpack/usage-guides/jetpack620/)
