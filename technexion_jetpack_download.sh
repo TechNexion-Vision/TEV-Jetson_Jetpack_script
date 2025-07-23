@@ -23,10 +23,16 @@ KERNEL_DIR="kernel/kernel-jammy-src"
 KERNEL_OUT="kernel_out"
 DT_DIR="${SRC_DIR}/hardware/nvidia/t23x/nv-public"
 OOT_DIR="${SRC_DIR}/nvidia-oot/"
+CAM_DIR="drivers/media/i2c/technexion"
+GCC_TOOL_CHAIN="${SRC_DIR}/kernel/gcc_tool_chain"
 BL_CFG="bootloader/generic/cfg"
 PIMNUX_DIR="bootloader/generic/BCT"
 
 get_nvidia_jetpack() {
+	if [ -d "${CUR_DIR}/Linux_for_Tegra" ]; then
+		echo -ne "\n### Linux_for_Tegra folder exist. Skip download jetpack source code.\n"
+		return 0
+	fi
 	echo -ne "\n### Get nvidia jetpack source code\n"
 	wget $JETPACK -q --tries=10 -O jetpack.tbz2
 	wget $ROOTFS -q --tries=10 -O rootfs.tbz2
@@ -60,13 +66,14 @@ sync_tn_source_code() {
 
 	echo -ne "# kernel\n"
 	cd ${SRC_DIR}/${KERNEL_DIR}
-	if [[ $USING_SSH -eq 0 ]];then
-		git remote add tn-github https://github.com/TechNexion-Vision/TEV-Jetson_kernel.git
+	SYNC=$(git branch | grep ${BRANCH})
+	if [ -z "${SYNC}" ]; then
+		git remote add tn-github ${GIT_URL}/TEV-Jetson_kernel.git
+		git fetch tn-github ${BRANCH}
+		git checkout -b ${BRANCH} tn-github/${BRANCH}
 	else
-		git remote add tn-github git@github.com:TechNexion-Vision/TEV-Jetson_kernel.git
+		git pull tn-github ${BRANCH}
 	fi
-	git fetch tn-github ${BRANCH}
-	git checkout -b ${BRANCH} tn-github/${BRANCH}
 	git fetch tn-github --tags
 	if [[ $USING_TAG -eq 1 ]];then
 		git reset --hard $TAG
@@ -74,17 +81,16 @@ sync_tn_source_code() {
 	cd ${CUR_DIR}
 
 	echo -ne "# dts\n"
-	if [[ $SOM == "Orin" ]]; then
-		cd ${DT_DIR}
-		if [[ $USING_SSH -eq 0 ]];then
-			git remote add tn-github https://github.com/TechNexion-Vision/TEV-JetsonOrin-Nano_device-tree.git
-		else
-			git remote add tn-github git@github.com:TechNexion-Vision/TEV-JetsonOrin-Nano_device-tree.git
-		fi
+	cd ${DT_DIR}
+	SYNC=$(git branch | grep ${BRANCH_DT})
+	if [ -z "${SYNC}" ]; then
+		git remote add tn-github ${GIT_URL}/TEV-JetsonOrin-Nano_device-tree.git
+		git fetch tn-github ${BRANCH_DT}
+		git checkout -b ${BRANCH_DT} tn-github/${BRANCH_DT}
+		git fetch tn-github --tags
+	else
+		git pull tn-github ${BRANCH_DT}
 	fi
-	git fetch tn-github ${BRANCH_DT}
-	git checkout -b ${BRANCH_DT} tn-github/${BRANCH_DT}
-	git fetch tn-github --tags
 	if [[ $USING_TAG -eq 1 ]];then
 		git reset --hard $TAG
 	fi
@@ -92,14 +98,15 @@ sync_tn_source_code() {
 
 	echo -ne "# technexion camera drivers\n"
 	cd ${OOT_DIR}
-	if [[ $USING_SSH -eq 0 ]];then
-		git submodule add -b ${BRANCH} https://github.com/TechNexion-Vision/TEV-Jetson_Camera_driver.git drivers/media/i2c/technexion
+	if [ ! -d "${CAM_DIR}" ]; then
+		git submodule add -b ${BRANCH} ${GIT_URL}/TEV-Jetson_Camera_driver.git ${CAM_DIR}
+		echo 'obj-m += technexion/' >> drivers/media/i2c/Makefile
+		cd ${CAM_DIR}
+		git checkout ${BRANCH}
 	else
-		git submodule add -b ${BRANCH} git@github.com:TechNexion-Vision/TEV-Jetson_Camera_driver.git drivers/media/i2c/technexion
+		cd ${CAM_DIR}
+		git pull origin ${BRANCH}
 	fi
-	echo 'obj-m += technexion/' >> drivers/media/i2c/Makefile
-	cd drivers/media/i2c/technexion
-	git checkout ${BRANCH}
 	if [[ $USING_TAG -eq 1 ]];then
 		git reset --hard $TAG
 	fi
@@ -107,17 +114,16 @@ sync_tn_source_code() {
 
 	echo -ne "# technexion pinmux file(xlsm)\n"
 	cd ${SRC_DIR}
-	if [[ $SOM == "Orin" ]]; then
-		if [[ $USING_SSH -eq 0 ]];then
-			git clone https://github.com/TechNexion-Vision/TEV-JetsonOrin-Nano_pinmux.git TEK-ORIN_Orin-Nano_pinmux
-		else
-			git clone git@github.com:TechNexion-Vision/TEV-JetsonOrin-Nano_pinmux.git TEK-ORIN_Orin-Nano_pinmux
-		fi
+	if [ ! -d "TEK-ORIN_Orin-Nano_pinmux" ]; then
+		git clone -o tn-github ${GIT_URL}/TEV-JetsonOrin-Nano_pinmux.git TEK-ORIN_Orin-Nano_pinmux
 		cd TEK-ORIN_Orin-Nano_pinmux
 		git checkout ${BRANCH}
-		if [[ $USING_TAG -eq 1 ]];then
-			git reset --hard ${TEK_TAG}
-		fi
+	else
+		cd TEK-ORIN_Orin-Nano_pinmux
+		git pull tn-github ${BRANCH}
+	fi
+	if [[ $USING_TAG -eq 1 ]];then
+		git reset --hard ${TEK_TAG}
 	fi
 	cd ${CUR_DIR}
 
@@ -125,6 +131,10 @@ sync_tn_source_code() {
 }
 
 create_gcc_tool_chain () {
+	if [ -d "${GCC_TOOL_CHAIN}" ]; then
+		echo -ne "\n### gcc tool chain had downloaded\n"
+		return 0
+	fi
 	echo -ne "\n### Download gcc tool chain\n"
 	cd ${SRC_DIR}/kernel/
 	wget -q --no-check-certificate ${TOOLCHAIN} --tries=10 -O toolchain.tar.bz2
@@ -138,16 +148,16 @@ create_gcc_tool_chain () {
 compile_kernel (){
 	echo -ne "\n### compile kernel\n"
 	cd ${SRC_DIR}
-	GCC_TOOL_CHAIN="$(pwd)/kernel/gcc_tool_chain"
-	# update kernel config
-	sed -zi 's|KERNEL_DEF_CONFIG="defconfig"\n|KERNEL_DEF_CONFIG="tegra_tn_defconfig"\n|' kernel_src_build_env.sh
-	# add more env
-	echo -e "export GCC_DIR=${GCC_TOOL_CHAIN}" >> kernel_src_build_env.sh
-	echo -e "export ARCH=arm64" >> kernel_src_build_env.sh
-	echo -e "export CROSS_COMPILE=\${GCC_DIR}/bin/aarch64-buildroot-linux-gnu-" >> kernel_src_build_env.sh
-	echo -e "export CROSS_COMPILE_AARCH64_PATH=\${GCC_DIR}/" >> kernel_src_build_env.sh
-	echo -e "export INSTALL_MOD_PATH=${CUR_DIR}/Linux_for_Tegra/rootfs/" >> kernel_src_build_env.sh
-
+	if [ -z "$(grep tegra_tn_defconfig kernel_src_build_env.sh)" ]; then
+		# update kernel config
+		sed -zi 's|KERNEL_DEF_CONFIG="defconfig"\n|KERNEL_DEF_CONFIG="tegra_tn_defconfig"\n|' kernel_src_build_env.sh
+		# add more env
+		echo -e "export GCC_DIR=${GCC_TOOL_CHAIN}" >> kernel_src_build_env.sh
+		echo -e "export ARCH=arm64" >> kernel_src_build_env.sh
+		echo -e "export CROSS_COMPILE=\${GCC_DIR}/bin/aarch64-buildroot-linux-gnu-" >> kernel_src_build_env.sh
+		echo -e "export CROSS_COMPILE_AARCH64_PATH=\${GCC_DIR}/" >> kernel_src_build_env.sh
+		echo -e "export INSTALL_MOD_PATH=${CUR_DIR}/Linux_for_Tegra/rootfs/" >> kernel_src_build_env.sh
+	fi
 	# build kernel, in-tree and out-of-tree modules
 	./nvbuild.sh
 	# install kernal, in-tree and out-of-tree modules
@@ -187,11 +197,7 @@ mv_needed_files_for_demo_image(){
 	fi
 
 	# copy install VizionViewer service
-	if [[ $USING_SSH -eq 0 ]];then
-		git clone https://github.com/TechNexion-Vision/TEV-Jetson_install_VizionViewer.git VizionViewer
-	else
-		git clone git@github.com:TechNexion-Vision/TEV-Jetson_install_VizionViewer.git VizionViewer
-	fi
+	git clone ${GIT_URL}/TEV-Jetson_install_VizionViewer.git VizionViewer
 	cd VizionViewer
 	git checkout ${BRANCH}
 	if [[ $USING_TAG -eq 1 ]];then
@@ -303,11 +309,7 @@ mv_needed_files_for_demo_image(){
 #	sed -i '8i\ \ \ \ \ \ \ \ reg@322 { /* GPIO_M_SCR_00_0 */' Linux_for_Tegra/${PIMNUX_DIR}/tegra234-mb2-bct-scr-p3767-0000.dts
 
 	# download disk image creator script
-	if [[ $USING_SSH -eq 0 ]];then
-		git clone https://github.com/TechNexion-Vision/TEV-Jetson_disk_image_creator.git TEV-Jetson_disk_image_creator
-	else
-		git clone git@github.com:TechNexion-Vision/TEV-Jetson_disk_image_creator.git TEV-Jetson_disk_image_creator
-	fi
+	git clone ${GIT_URL}/TEV-Jetson_disk_image_creator.git TEV-Jetson_disk_image_creator
 	cd TEV-Jetson_disk_image_creator
 	git checkout ${BRANCH}
 	if [[ $USING_TAG -eq 1 ]];then
@@ -458,10 +460,6 @@ fi
 
 echo valid input: b=$b
 
-if [[ $b == *"ORIN"* ]]; then
-	SOM=Orin
-fi
-
 if [ -z "${t}" ]; then
 	echo -e "### lack of tag, using lastest code.\n\n"
 else
@@ -488,10 +486,10 @@ abootimg nfs-kernel-server
 
 if [[ $(ssh -T -y git@github.com -o StrictHostKeyChecking=no; echo $?) -eq 1 ]];then
 	echo -e "check github HostKey success, using ssh to download code.\n"
-	USING_SSH=1
+	GIT_URL="git@github.com:TechNexion-Vision"
 else
 	echo -e "check github HostKey failed, using Https to download code.\n"
-	USING_SSH=0
+	GIT_URL="https://github.com/TechNexion-Vision"
 fi
 
 do_job
