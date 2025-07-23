@@ -176,25 +176,21 @@ mv_needed_files_for_demo_image(){
 
 
 	# copy device-tree
-	if [[ $SOM == "Orin" ]];then
-		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/* Linux_for_Tegra/kernel/dtb/
-		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*tek* Linux_for_Tegra/rootfs/boot/
-		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*tevs* Linux_for_Tegra/rootfs/boot/
-		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*vls* Linux_for_Tegra/rootfs/boot/
-		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-p3768-0000+p3767-000*-nv.dtb Linux_for_Tegra/rootfs/boot/
-		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*hdmi* Linux_for_Tegra/rootfs/boot/
-	fi
+	sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/* Linux_for_Tegra/kernel/dtb/
+	sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*tek* Linux_for_Tegra/rootfs/boot/
+	sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*tevs* Linux_for_Tegra/rootfs/boot/
+	sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*vls* Linux_for_Tegra/rootfs/boot/
+	sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-p3768-0000+p3767-000*-nv.dtb Linux_for_Tegra/rootfs/boot/
+	sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*hdmi* Linux_for_Tegra/rootfs/boot/
 
 	# copy pinmux file
-	if [[ $SOM == "Orin" ]]; then
-		sudo cp -rp ${SRC_DIR}/TEK-ORIN_Orin-Nano_pinmux/Orin-tek-orin-a1-gpio-default.dtsi Linux_for_Tegra/bootloader/
-		sudo cp -rp ${SRC_DIR}/TEK-ORIN_Orin-Nano_pinmux/Orin-tek-orin-a1-pinmux.dtsi Linux_for_Tegra/${PIMNUX_DIR}/
-		# tweak for change firewall rule for PWM7
-		sudo sed -i '25653d' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
-		sudo sed -i '25653i \ \ \ \ \ \ \ \ \ \ \ \ value = <0x0010000a>;' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
-		sudo sed -i '25658d' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
-		sudo sed -i '25658i \ \ \ \ \ \ \ \ \ \ \ \ value = <0x0010000a>;' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
-	fi
+	sudo cp -rp ${SRC_DIR}/TEK-ORIN_Orin-Nano_pinmux/Orin-tek-orin-a1-gpio-default.dtsi Linux_for_Tegra/bootloader/
+	sudo cp -rp ${SRC_DIR}/TEK-ORIN_Orin-Nano_pinmux/Orin-tek-orin-a1-pinmux.dtsi Linux_for_Tegra/${PIMNUX_DIR}/
+	# tweak for change firewall rule for PWM7
+	sudo sed -i '25653d' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
+	sudo sed -i '25653i \ \ \ \ \ \ \ \ \ \ \ \ value = <0x0010000a>;' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
+	sudo sed -i '25658d' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
+	sudo sed -i '25658i \ \ \ \ \ \ \ \ \ \ \ \ value = <0x0010000a>;' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
 
 	# copy install VizionViewer service
 	git clone ${GIT_URL}/TEV-Jetson_install_VizionViewer.git VizionViewer
