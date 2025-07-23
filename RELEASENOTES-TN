@@ -1,54 +1,23 @@
-Nvidia Jetpack r35.3.1 2023Q4 TechNexion BSP Release Notes
+Nvidia Jetpack r36.4.3 2025Q3 TechNexion BSP Release Notes
 
 ======================================
 
 Please refer to 'TechNexion developer portal' for detailed support list and demo images:
-<To Do>
+[JetPack 6.2.0 Usage Guides](https://developer.technexion.com/docs/embedded-software/linux/nvidia-jetpack/usage-guides/jetpack620/)
 
-Release Name: tn_l4t-r35.3.1_kernel-5.10
+Release Name: tn_l4t-r36.4.ga_kernel-5.15
 
-Release Revision: 202312xx
+Release Revision: 202508xx
 
-
+Tag name on github: r36.4.ga
 ----
 Supported TechNexion products:
 
 Orin NX:
 TEK6100-ORIN (16 GB)
 
-TEK6070-ORIN (8 GB)
-
 Orin Nano:
 TEK6040-ORIN (8 GB)
-TEK6020-ORIN (4 GB)
-
-Orin Nano EVK (8 GB):
-TEV-RPI22-TEVI 		with Orin-Nano-EVK
-TEV-RPI22-TEVS 		with Orin-Nano-EVK
-VLS3-ORIN-EVK-TEVI 	with Orin-Nano-EVK
-VLS3-ORIN-EVK-TEVS 	with Orin-Nano-EVK
-
-----
-Support list table:
-
-	<To Do>
 
 ----
 Known issue:
-
-1.  #980/#1032: 10" MIPI panel (g101uan02) stays in black screen after waking up from sleep.
-
-----
-BSP version:
-
-Tag name on github: tn_l4t-r35.3.1_kernel-5.10_202312xx
-
-TEV-Jetson_Jetpack_script: <To Do>
-
-TEV-Jetson_Camera_driver: <To Do>
-
-TEV-Jetson_kernel: <To Do>
-
-TEV-JetsonOrin-Nano_device-tree: <To Do>
-
-TEV-JetsonOrin-Nano_pinmux: <To Do>
