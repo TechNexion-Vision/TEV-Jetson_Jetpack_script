@@ -433,7 +433,12 @@ while getopts ":b:t:-:" o; do
 		qspi-only)
 			qspi_only=1
 			;;
-		flash-only|no-flash)
+		flash-only)
+			flash_opt="--${OPTARG}"
+			create_demo_image
+			exit 0
+			;;
+		no-flash)
 			flash_opt="--${OPTARG}"
 			;;
 		build-flash)
