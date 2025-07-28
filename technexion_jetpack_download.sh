@@ -24,7 +24,7 @@ KERNEL_OUT="kernel_out"
 DT_DIR="${SRC_DIR}/hardware/nvidia/t23x/nv-public"
 OOT_DIR="${SRC_DIR}/nvidia-oot/"
 CAM_DIR="drivers/media/i2c/technexion"
-GCC_TOOL_CHAIN="${SRC_DIR}/kernel/gcc_tool_chain"
+GCC_TOOL_CHAIN="${CUR_DIR}/${SRC_DIR}/kernel/gcc_tool_chain"
 BL_CFG="bootloader/generic/cfg"
 PIMNUX_DIR="bootloader/generic/BCT"
 
@@ -66,8 +66,7 @@ sync_tn_source_code() {
 
 	echo -ne "# kernel\n"
 	cd ${SRC_DIR}/${KERNEL_DIR}
-	SYNC=$(git branch | grep ${BRANCH})
-	if [ -z "${SYNC}" ]; then
+	if [ -z "$(git branch | grep ${BRANCH})" ]; then
 		git remote add tn-github ${GIT_URL}/TEV-Jetson_kernel.git
 		git fetch tn-github ${BRANCH}
 		git checkout -b ${BRANCH} tn-github/${BRANCH}
@@ -82,8 +81,7 @@ sync_tn_source_code() {
 
 	echo -ne "# dts\n"
 	cd ${DT_DIR}
-	SYNC=$(git branch | grep ${BRANCH_DT})
-	if [ -z "${SYNC}" ]; then
+	if [ -z "$(git branch | grep ${BRANCH_DT})" ]; then
 		git remote add tn-github ${GIT_URL}/TEV-JetsonOrin-Nano_device-tree.git
 		git fetch tn-github ${BRANCH_DT}
 		git checkout -b ${BRANCH_DT} tn-github/${BRANCH_DT}
