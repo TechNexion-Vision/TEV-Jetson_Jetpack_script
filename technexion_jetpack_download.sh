@@ -189,6 +189,9 @@ mv_needed_files_for_demo_image(){
 	sudo sed -i '25653i \ \ \ \ \ \ \ \ \ \ \ \ value = <0x0010000a>;' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
 	sudo sed -i '25658d' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
 	sudo sed -i '25658i \ \ \ \ \ \ \ \ \ \ \ \ value = <0x0010000a>;' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
+	# tweak for update GPIO12(PN.01) in output high group
+	sudo sed -i '/TEGRA234_MAIN_GPIO(N, 1)/d' Linux_for_Tegra/bootloader/Orin-tek-orin-a1-gpio-default.dtsi
+	sudo sed -i '76i \\t\t\t\tTEGRA234_MAIN_GPIO(N, 1)' Linux_for_Tegra/bootloader/Orin-tek-orin-a1-gpio-default.dtsi
 
 	# copy install VizionViewer service
 	git clone ${GIT_URL}/TEV-Jetson_install_VizionViewer.git VizionViewer
