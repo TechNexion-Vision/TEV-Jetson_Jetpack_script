@@ -101,6 +101,7 @@ sync_tn_source_code() {
 		echo 'obj-m += technexion/' >> drivers/media/i2c/Makefile
 		cd ${CAM_DIR}
 		git checkout ${BRANCH}
+		git fetch origin --tags
 	else
 		cd ${CAM_DIR}
 		git pull origin ${BRANCH}
@@ -116,12 +117,13 @@ sync_tn_source_code() {
 		git clone -o tn-github ${GIT_URL}/TEV-JetsonOrin-Nano_pinmux.git TEK-ORIN_Orin-Nano_pinmux
 		cd TEK-ORIN_Orin-Nano_pinmux
 		git checkout ${BRANCH}
+		git fetch tn-github --tags
 	else
 		cd TEK-ORIN_Orin-Nano_pinmux
 		git pull tn-github ${BRANCH}
 	fi
 	if [[ $USING_TAG -eq 1 ]];then
-		git reset --hard ${TEK_TAG}
+		git reset --hard $TAG
 	fi
 	cd ${CUR_DIR}
 
@@ -206,15 +208,14 @@ mv_needed_files_for_demo_image(){
 	sudo cp -rp VizionViewer/preinstall_vizionviewer.sh ./
 	rm -rf VizionViewer/
 
-	# dwonload VizionViewer
+	# download VizionViewer
 	if [[ $USING_TAG -eq 1 ]];then
 		case $TAG in
-			r35.3.ga)
-				VV_URL='https://download.technexion.com/vizionviewer/archived/linux_nvidia_jetson/stable/vizionviewer_24.05.1_jetson_stable.tar.xz'
-				;;
 			r36.4.ga)
-				VV_URL='https://download.technexion.com/vizionviewer/linux_arm64/vizionviewer-25.06.1-linuxarm64.tar.xz'
-				DM_URL='https://download.technexion.com/vizionviewer/linux_arm64/jetpack_8_cam_demo_patch_for_25.06.1.tar.xz'
+				VV_FILE="vizionviewer-25.06.1-linuxarm64.tar.xz"
+				VV_URL="https://download.technexion.com/vizionviewer/linux_arm64/${VV_FILE}"
+				DM_FILE="jetpack_8_cam_demo_patch_for_25.06.1.tar.xz"
+				DM_URL="https://download.technexion.com/vizionviewer/linux_arm64/${DM_FILE}"
 				;;
 			*)
 				# Let VV_URL empty, cause error when try to download
@@ -253,15 +254,15 @@ mv_needed_files_for_demo_image(){
 				VV_FILE=${VV_LIST[$i]}
 			fi
 		done
+		# download matched 8_cam_demo
+		DM_VER=$(echo "${VV_FILE}" | cut -d '-' -f 2)
+		DM_FILE='jetpack_8_cam_demo_patch_for_'${DM_VER}'.tar.xz'
+		DM_URL='https://download.technexion.com/vizionviewer/linux_arm64/'${DM_FILE}
 	fi
 	wget -c -t --no-check-certificate ${VV_URL}
 	tar -xJf ${VV_FILE}
 	sudo mv *.deb Linux_for_Tegra/rootfs/usr/share/vizionviewer/
 
-	# download matched 8_cam_demo
-	DM_VER=$(echo "${VV_FILE}" | cut -d '-' -f 2)
-	DM_FILE='jetpack_8_cam_demo_patch_for_'${DM_VER}'.tar.xz'
-	DM_URL='https://download.technexion.com/vizionviewer/linux_arm64/'${DM_FILE}
 	wget -c -t --no-check-certificate ${DM_URL}
 	sudo mv ${DM_FILE} Linux_for_Tegra/rootfs/
 
