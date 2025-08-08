@@ -471,6 +471,12 @@ else
 	TEK_TAG="${TAG}_TEK-ORIN-a1"
 fi
 
+HOST_VER=$(lsb_release -rs)
+if (( $(echo "$HOST_VER < 23.10" | bc -l) )); then
+	libgl_pkg="libegl1-mesa"
+else
+	libgl_pkg="libglx-mesa0"
+fi
 
 # install build require package
 echo -ne "####install build require package\n"
@@ -478,7 +484,7 @@ sudo apt-get update -y
 sudo apt-get install -y qemu-user-static bc kmod flex
 sudo apt-get install -y gawk wget git git-core diffstat unzip texinfo gcc-multilib build-essential \
 chrpath socat cpio python-is-python3 python3 python3-pip python3-pexpect \
-python3-git python3-jinja2 libegl1-mesa rsync bc bison \
+python3-git python3-jinja2 ${libgl_pkg} rsync bc bison \
 xz-utils debianutils iputils-ping libsdl1.2-dev xterm \
 language-pack-en coreutils texi2html file docbook-utils \
 help2man desktop-file-utils \
