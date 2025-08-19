@@ -4,10 +4,12 @@ This script contains a complete system package that enables your Jeston Jetpack 
 
 ## Product page:
 
-[TEK-ORIN](https://www.technexion.com/products/embedded-computing/aivision/tek6040-orin-nano/)
+[TEK6040-ORIN-NANO](https://www.technexion.com/products/embedded-computing/aivision/tek6040-orin-nano/)
+
+[TEK6100-ORIN-NX](https://www.technexion.com/products/embedded-computing/aivision/tek6100-orin-nx/)
 
 ## Full instruction:
-[Technexion portal](https://developer.technexion.com/docs/embedded-software/linux/nvidia-jetpack/usage-guides/jetpack620/host-environment-setting)
+[Technexion Portal](https://developer.technexion.com/docs/embedded-software/linux/nvidia-jetpack/usage-guides/jetpack620/host-environment-setting)
 
 ## 1. Prepare ubuntu environment
 Download Ubuntu 20.04/ 22.04 iso file from [ubuntu web site](https://ubuntu.com/download/desktop).
@@ -80,4 +82,4 @@ Bus 001 Device 012: ID 0955:7e19 NVIDIA Corp. APX
 $ ./technexion_jetpack_download.sh -b <baseboard> --flash-only
 ```
 # Want for more guide ? 
-click here !! [Technexion portal](https://developer.technexion.com/docs/embedded-software/linux/nvidia-jetpack/usage-guides/jetpack620/)
+click here !! [Technexion Portal](https://developer.technexion.com/docs/embedded-software/linux/nvidia-jetpack/usage-guides/jetpack620/)
