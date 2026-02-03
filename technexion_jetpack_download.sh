@@ -8,8 +8,8 @@ BRANCH="tn_l4t-r36.4.ga_kernel-5.15"
 BRANCH_DT="tn_l4t-r36.4.3.ga_kernel-5.15"
 
 VALID_TAG=("r36.4.ga")
-VALID_JP=("jp62", "jp621")
-VALID_BOOT=("tevs-dual", "vls", "vls-gm2", "vls-gm2-fsync", "vls-gm2-tunnel", "vls-gm2-tunnel-fsync", "vls-gm2-fsync-external")
+VALID_JP=("jp62" "jp621")
+VALID_BOOT=("tevs-dual" "vls" "vls-gm2" "vls-gm2-fsync" "vls-gm2-tunnel" "vls-gm2-tunnel-fsync" "vls-gm2-fsync-external")
 
 USING_TAG=0
 
