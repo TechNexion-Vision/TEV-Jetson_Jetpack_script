@@ -9,6 +9,7 @@ BRANCH_DT="tn_l4t-r36.4.3.ga_kernel-5.15"
 
 VALID_TAG=("r36.4.ga")
 VALID_JP=("jp62", "jp621")
+VALID_BOOT=("tevs-dual", "vls", "vls-gm2", "vls-gm2-fsync", "vls-gm2-tunnel", "vls-gm2-tunnel-fsync", "vls-gm2-fsync-external")
 
 USING_TAG=0
 
@@ -408,7 +409,7 @@ mv_needed_files_for_demo_image(){
 			sudo bash -c "echo -e '\n\n$TEVS_CONF' >> extlinux.conf"
 		fi
 
-		CAM_MODULE="vls-gm2"
+		CAM_MODULE=${DEV}
 		sudo sed -i "s/DEFAULT .*/DEFAULT tn-${CAM_MODULE}/" extlinux.conf
 	elif [[ ${board_conf} == "jetson-agx-orin-devkit" ]]; then
 		CAM_MODULE="vls-gm2"
@@ -462,7 +463,7 @@ mv_needed_files_for_demo_image(){
 			sudo bash -c "echo -e '\n\n$TEVS_CONF' >> extlinux.conf"
 		fi
 
-		CAM_MODULE="vls-gm2"
+		CAM_MODULE=${DEV}
 		sudo sed -i "s/DEFAULT .*/DEFAULT tn-${CAM_MODULE}/" extlinux.conf
 	fi
 	cd ${CUR_DIR}
@@ -631,7 +632,7 @@ if [ "$(id -u)" = "0" ]; then
 	exit 1
 fi
 
-while getopts ":b:t:v:-:" o; do
+while getopts ":b:t:v:d:-:" o; do
 	case "${o}" in
 	b)
 		b=${OPTARG}; setup_env_vars ${b}
@@ -663,6 +664,20 @@ while getopts ":b:t:v:-:" o; do
 			usage
 		fi
 		;;
+	d)
+		for k in "${VALID_BOOT[@]}"; do
+			if [[ "$k" == "${OPTARG}" ]]; then
+				d=${OPTARG}
+				break
+			fi
+		done
+		if [[ -z ${d} ]];then
+			echo -e "invalid device boot configuration option!!\n"
+			echo -e "Only support 'tevs-dual', 'vls', 'vls-gm2', 'vls-gm2-fsync', 'vls-gm2-tunnel', 'vls-gm2-tunnel-fsync' and 'vls-gm2-fsync-external'!!\n"
+			usage
+		fi
+		;;
+
 	-) case ${OPTARG} in
 		qspi-only)
 			qspi_only=1
@@ -707,6 +722,22 @@ if [ -z "${v}" ]; then
 else
 	echo "valid input: jp=$v"
 	JP=$v
+fi
+
+if [ -z "${d}" ]; then
+	echo -e "### lack of device, using default vls-gm2.\n\n"
+	DEV="vls-gm2"
+else
+	echo "valid input: dev=$d"
+	DEV=$d
+	if [[ ${board_conf} == "jetson-agx-orin-devkit" ]]; then
+		if [ ${DEV} != "vls-gm2" ] || [ ${DEV} != "vls-gm2-fsync" ] || \
+			[ ${DEV} != "vls-gm2-tunnel" ] || [ ${DEV} != "vls-gm2-tunnel-fsync" ] || \
+			[ ${DEV} != "vls-gm2-fsync-external" ]; then
+			echo -e "### ${board_conf} don't support device ${DEV}\n!"
+			exit 1
+		fi
+	fi
 fi
 
 HOST_VER=$(lsb_release -rs)
