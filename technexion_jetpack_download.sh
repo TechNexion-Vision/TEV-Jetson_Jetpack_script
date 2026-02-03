@@ -8,6 +8,7 @@ BRANCH="tn_l4t-r36.4.ga_kernel-5.15"
 BRANCH_DT="tn_l4t-r36.4.3.ga_kernel-5.15"
 
 VALID_TAG=("r36.4.ga")
+VALID_JP=("jp62", "jp621")
 
 USING_TAG=0
 
@@ -29,6 +30,13 @@ BL_CFG="bootloader/generic/cfg"
 PIMNUX_DIR="bootloader/generic/BCT"
 
 get_nvidia_jetpack() {
+	if [ ${JP} == "jp621" ]; then
+		JETPACK="https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.4/release/Jetson_Linux_r36.4.4_aarch64.tbz2/"
+		ROOTFS="https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.4/release/Tegra_Linux_Sample-Root-Filesystem_r36.4.4_aarch64.tbz2/"
+		PUBLIC="https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.4/sources/public_sources.tbz2/"
+		BRANCH_DT="tn_l4t-r36.4.4.ga_kernel-5.15"
+	fi
+
 	if [ -d "${CUR_DIR}/Linux_for_Tegra" ]; then
 		echo -ne "\n### Linux_for_Tegra folder exist. Skip download jetpack source code.\n"
 		return 0
@@ -549,6 +557,9 @@ usage() {
 	echo "-t: tag for sync code:" 1>&2
 	echo "${VALID_TAG}" 1>&2
 	echo "" 1>&2
+	echo "-v: jetpack version for sync code:" 1>&2
+	echo "${VALID_JP}" 1>&2
+	echo "" 1>&2
 	echo "--qspi-only: do not create/ flash rootfs, for qspi image only" 1>&2
 	echo "" 1>&2
 	echo "flash options: <--flash-only/--build-flash/--no-flash>" 1>&2
@@ -622,7 +633,7 @@ if [ "$(id -u)" = "0" ]; then
 	exit 1
 fi
 
-while getopts ":b:t:-:" o; do
+while getopts ":b:t:v:-:" o; do
 	case "${o}" in
 	b)
 		b=${OPTARG}; setup_env_vars ${b}
@@ -638,6 +649,19 @@ while getopts ":b:t:-:" o; do
 		if [[ -z ${t} ]];then
 			echo -e "invalid tag option!!\n"
 			echo -e "If you want to using no tag, just don't add this option!!\n"
+			usage
+		fi
+		;;
+	v)
+		for k in "${VALID_JP[@]}"; do
+			if [[ "$k" == "${OPTARG}" ]]; then
+				v=${OPTARG}
+				break
+			fi
+		done
+		if [[ -z ${v} ]];then
+			echo -e "invalid jetpack option!!\n"
+			echo -e "Only support 'jp62' and 'jp621'!!\n"
 			usage
 		fi
 		;;
@@ -677,6 +701,14 @@ else
 	echo "valid input: t=$t"
 	TAG=$t
 	TEK_TAG="${TAG}_TEK-ORIN-a1"
+fi
+
+if [ -z "${v}" ]; then
+	echo -e "### lack of jetpack, using default jp62.\n\n"
+	JP="jp62"
+else
+	echo "valid input: jp=$v"
+	JP=$v
 fi
 
 HOST_VER=$(lsb_release -rs)
