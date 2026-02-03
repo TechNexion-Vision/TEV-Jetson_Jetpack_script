@@ -64,20 +64,22 @@ run_nvidia_script_and_sync_code() {
 sync_tn_source_code() {
 	echo -ne "\n### Clone source code from Technexion github\n"
 
-	echo -ne "# kernel\n"
-	cd ${SRC_DIR}/${KERNEL_DIR}
-	if [ -z "$(git branch | grep ${BRANCH})" ]; then
-		git remote add tn-github ${GIT_URL}/TEV-Jetson_kernel.git
-		git fetch tn-github ${BRANCH}
-		git checkout -b ${BRANCH} tn-github/${BRANCH}
-	else
-		git pull tn-github ${BRANCH}
+	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+		echo -ne "# kernel\n"
+		cd ${SRC_DIR}/${KERNEL_DIR}
+		if [ -z "$(git branch | grep ${BRANCH})" ]; then
+			git remote add tn-github ${GIT_URL}/TEV-Jetson_kernel.git
+			git fetch tn-github ${BRANCH}
+			git checkout -b ${BRANCH} tn-github/${BRANCH}
+		else
+			git pull tn-github ${BRANCH}
+		fi
+		git fetch tn-github --tags
+		if [[ $USING_TAG -eq 1 ]];then
+			git reset --hard $TAG
+		fi
+		cd ${CUR_DIR}
 	fi
-	git fetch tn-github --tags
-	if [[ $USING_TAG -eq 1 ]];then
-		git reset --hard $TAG
-	fi
-	cd ${CUR_DIR}
 
 	echo -ne "# dts\n"
 	cd ${DT_DIR}
@@ -111,21 +113,23 @@ sync_tn_source_code() {
 	fi
 	cd ${CUR_DIR}
 
-	echo -ne "# technexion pinmux file(xlsm)\n"
-	cd ${SRC_DIR}
-	if [ ! -d "TEK-ORIN_Orin-Nano_pinmux" ]; then
-		git clone -o tn-github ${GIT_URL}/TEV-JetsonOrin-Nano_pinmux.git TEK-ORIN_Orin-Nano_pinmux
-		cd TEK-ORIN_Orin-Nano_pinmux
-		git checkout ${BRANCH}
-		git fetch tn-github --tags
-	else
-		cd TEK-ORIN_Orin-Nano_pinmux
-		git pull tn-github ${BRANCH}
+	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+		echo -ne "# technexion pinmux file(xlsm)\n"
+		cd ${SRC_DIR}
+		if [ ! -d "TEK-ORIN_Orin-Nano_pinmux" ]; then
+			git clone -o tn-github ${GIT_URL}/TEV-JetsonOrin-Nano_pinmux.git TEK-ORIN_Orin-Nano_pinmux
+			cd TEK-ORIN_Orin-Nano_pinmux
+			git checkout ${BRANCH}
+			git fetch tn-github --tags
+		else
+			cd TEK-ORIN_Orin-Nano_pinmux
+			git pull tn-github ${BRANCH}
+		fi
+		if [[ $USING_TAG -eq 1 ]];then
+			git reset --hard $TAG
+		fi
+		cd ${CUR_DIR}
 	fi
-	if [[ $USING_TAG -eq 1 ]];then
-		git reset --hard $TAG
-	fi
-	cd ${CUR_DIR}
 
 	echo -ne "### Clone source code from Technexion github done\n"
 }
@@ -149,8 +153,10 @@ compile_kernel (){
 	echo -ne "\n### compile kernel\n"
 	cd ${SRC_DIR}
 	if [ -z "$(grep tegra_tn_defconfig kernel_src_build_env.sh)" ]; then
-		# update kernel config
-		sed -zi 's|KERNEL_DEF_CONFIG="defconfig"\n|KERNEL_DEF_CONFIG="tegra_tn_defconfig"\n|' kernel_src_build_env.sh
+		if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+			# update kernel config
+			sed -zi 's|KERNEL_DEF_CONFIG="defconfig"\n|KERNEL_DEF_CONFIG="tegra_tn_defconfig"\n|' kernel_src_build_env.sh
+		fi
 		# add more env
 		echo -e "export GCC_DIR=${GCC_TOOL_CHAIN}" >> kernel_src_build_env.sh
 		echo -e "export ARCH=arm64" >> kernel_src_build_env.sh
@@ -177,23 +183,33 @@ mv_needed_files_for_demo_image(){
 
 	# copy device-tree
 	sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/* Linux_for_Tegra/kernel/dtb/
-	sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*tek* Linux_for_Tegra/rootfs/boot/
 	sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*tevs* Linux_for_Tegra/rootfs/boot/
-	sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*vls* Linux_for_Tegra/rootfs/boot/
-	sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-p3768-0000+p3767-000*-nv.dtb Linux_for_Tegra/rootfs/boot/
+	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*tek* Linux_for_Tegra/rootfs/boot/
+		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*vls* Linux_for_Tegra/rootfs/boot/
+		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-p3768-0000+p3767-000*-nv.dtb Linux_for_Tegra/rootfs/boot/
+	elif [[ ${board_conf} == "jetson-orin-nano-devkit" ]]; then
+		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*vls* Linux_for_Tegra/rootfs/boot/
+		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-p3768-0000+p3767-000*-nv.dtb Linux_for_Tegra/rootfs/boot/
+	elif [[ ${board_conf} == "jetson-agx-orin-devkit" ]]; then
+		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*vls-gm2* Linux_for_Tegra/rootfs/boot/
+		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-p3737-*-nv.dtb Linux_for_Tegra/rootfs/boot/
+	fi
 	sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*hdmi* Linux_for_Tegra/rootfs/boot/
 
-	# copy pinmux file
-	sudo cp -rp ${SRC_DIR}/TEK-ORIN_Orin-Nano_pinmux/Orin-tek-orin-a1-gpio-default.dtsi Linux_for_Tegra/bootloader/
-	sudo cp -rp ${SRC_DIR}/TEK-ORIN_Orin-Nano_pinmux/Orin-tek-orin-a1-pinmux.dtsi Linux_for_Tegra/${PIMNUX_DIR}/
-	# tweak for change firewall rule for PWM7
-	sudo sed -i '25653d' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
-	sudo sed -i '25653i \ \ \ \ \ \ \ \ \ \ \ \ value = <0x0010000a>;' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
-	sudo sed -i '25658d' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
-	sudo sed -i '25658i \ \ \ \ \ \ \ \ \ \ \ \ value = <0x0010000a>;' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
-	# tweak for update GPIO12(PN.01) in output high group
-	sudo sed -i '/TEGRA234_MAIN_GPIO(N, 1)/d' Linux_for_Tegra/bootloader/Orin-tek-orin-a1-gpio-default.dtsi
-	sudo sed -i '76i \\t\t\t\tTEGRA234_MAIN_GPIO(N, 1)' Linux_for_Tegra/bootloader/Orin-tek-orin-a1-gpio-default.dtsi
+	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+		# copy pinmux file
+		sudo cp -rp ${SRC_DIR}/TEK-ORIN_Orin-Nano_pinmux/Orin-tek-orin-a1-gpio-default.dtsi Linux_for_Tegra/bootloader/
+		sudo cp -rp ${SRC_DIR}/TEK-ORIN_Orin-Nano_pinmux/Orin-tek-orin-a1-pinmux.dtsi Linux_for_Tegra/${PIMNUX_DIR}/
+		# tweak for change firewall rule for PWM7
+		sudo sed -i '25653d' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
+		sudo sed -i '25653i \ \ \ \ \ \ \ \ \ \ \ \ value = <0x0010000a>;' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
+		sudo sed -i '25658d' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
+		sudo sed -i '25658i \ \ \ \ \ \ \ \ \ \ \ \ value = <0x0010000a>;' Linux_for_Tegra/bootloader/tegra234-firewall-config-base.dtsi
+		# tweak for update GPIO12(PN.01) in output high group
+		sudo sed -i '/TEGRA234_MAIN_GPIO(N, 1)/d' Linux_for_Tegra/bootloader/Orin-tek-orin-a1-gpio-default.dtsi
+		sudo sed -i '76i \\t\t\t\tTEGRA234_MAIN_GPIO(N, 1)' Linux_for_Tegra/bootloader/Orin-tek-orin-a1-gpio-default.dtsi
+	fi
 
 	# copy install VizionViewer service
 	git clone ${GIT_URL}/TEV-Jetson_install_VizionViewer.git VizionViewer
@@ -214,8 +230,10 @@ mv_needed_files_for_demo_image(){
 			r36.4.ga)
 				VV_FILE="vizionviewer-25.06.1-linuxarm64.tar.xz"
 				VV_URL="https://download.technexion.com/vizionviewer/linux_arm64/${VV_FILE}"
-				DM_FILE="jetpack_8_cam_demo_patch_for_25.06.1.tar.xz"
-				DM_URL="https://download.technexion.com/vizionviewer/linux_arm64/${DM_FILE}"
+				if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+					DM_FILE="jetpack_8_cam_demo_patch_for_25.06.1.tar.xz"
+					DM_URL="https://download.technexion.com/vizionviewer/linux_arm64/${DM_FILE}"
+				fi
 				;;
 			*)
 				# Let VV_URL empty, cause error when try to download
@@ -254,50 +272,201 @@ mv_needed_files_for_demo_image(){
 				VV_FILE=${VV_LIST[$i]}
 			fi
 		done
-		# download matched 8_cam_demo
-		DM_VER=$(echo "${VV_FILE}" | cut -d '-' -f 2)
-		DM_FILE='jetpack_8_cam_demo_patch_for_'${DM_VER}'.tar.xz'
-		DM_URL='https://download.technexion.com/vizionviewer/linux_arm64/'${DM_FILE}
+		if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+			# download matched 8_cam_demo
+			DM_VER=$(echo "${VV_FILE}" | cut -d '-' -f 2)
+			DM_FILE='jetpack_8_cam_demo_patch_for_'${DM_VER}'.tar.xz'
+			DM_URL='https://download.technexion.com/vizionviewer/linux_arm64/'${DM_FILE}
+		fi
 	fi
 	wget -c -t --no-check-certificate ${VV_URL}
 	tar -xJf ${VV_FILE}
 	sudo mv *.deb Linux_for_Tegra/rootfs/usr/share/vizionviewer/
 
-	wget -c -t --no-check-certificate ${DM_URL}
-	sudo mv ${DM_FILE} Linux_for_Tegra/rootfs/
-
-	# install vizionviewer in rootfs
-	sudo ./preinstall_vizionviewer.sh
-	sudo rm ${VV_FILE} Linux_for_Tegra/rootfs/${DM_FILE}
-
-	# copy QCA9377 firmware from github
-	git clone https://git.codelinaro.org/clo/ath-firmware/ath10k-firmware.git QCA9377_WIFI
-	git clone https://oauth2:SbtQ_mC4fvJRA88_9jB7@gitlab.com/technexion-imx/qca_firmware.git QCA9377_BT
-	sudo cp -rp QCA9377_WIFI/QCA9377/hw1.0/board-2.bin Linux_for_Tegra/rootfs/lib/firmware/ath10k/QCA9377/hw1.0
-	sudo cp -rp QCA9377_WIFI/QCA9377/hw1.0/board.bin Linux_for_Tegra/rootfs/lib/firmware/ath10k/QCA9377/hw1.0
-	sudo cp -rp QCA9377_WIFI/LICENSE.qca_firmware Linux_for_Tegra/rootfs/lib/firmware/ath10k/QCA9377/hw1.0
-	sudo cp -rp QCA9377_WIFI/QCA9377/hw1.0/CNSS.TF.1.0/firmware-5.bin_CNSS.TF.1.0-00267-QCATFSWPZ-1 Linux_for_Tegra/rootfs/lib/firmware/ath10k/QCA9377/hw1.0/firmware-5.bin
-	sudo cp -rp QCA9377_BT/qca/notice.txt Linux_for_Tegra/rootfs/lib/firmware/qca
-	sudo cp -rp QCA9377_BT/qca/nvm_usb_00000302.bin Linux_for_Tegra/rootfs/lib/firmware/qca
-	sudo cp -rp QCA9377_BT/qca/rampatch_usb_00000302.bin Linux_for_Tegra/rootfs/lib/firmware/qca
-	rm -rf QCA9377_WIFI
-	rm -rf QCA9377_BT
-
-	# copy change boot config
-	cd Linux_for_Tegra/rootfs/boot/extlinux/
-	# tweak for close quiet for more dmesg
-	sudo sed -i 's/APPEND \${cbootargs} quiet/APPEND \${cbootargs}/' extlinux.conf
-	cd ${CUR_DIR}
+	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+		wget -c -t --no-check-certificate ${DM_URL}
+		sudo mv ${DM_FILE} Linux_for_Tegra/rootfs/
+	fi
 
 	# create default user and auto login
 	sed -zi 's|show_eula\n|#show_eula\n|' Linux_for_Tegra/tools/l4t_create_default_user.sh
 	sudo Linux_for_Tegra/tools/l4t_create_default_user.sh -u ubuntu -p ubuntu -a
 	sed -zi 's|#show_eula\n|show_eula\n|' Linux_for_Tegra/tools/l4t_create_default_user.sh
 
-	# change background to TecnNexion logo
-	wget -c -t 5 --no-check-certificate https://download.technexion.com/development_resources/.technexion_logo/PPT2.jpg
-	sudo mv PPT2.jpg Linux_for_Tegra/rootfs/usr/share/backgrounds/
-	sudo sed -i 's|nv_background="/usr/share/backgrounds/NVIDIA_Wallpaper.jpg"|nv_background="/usr/share/backgrounds/PPT2.jpg"|' Linux_for_Tegra/rootfs/etc/xdg/autostart/nvbackground.sh
+	# copy script files
+	cd ${CUR_DIR}
+	sudo cp set_config.sh Linux_for_Tegra/rootfs/home/ubuntu/.
+	if [[ ${board_conf} == "jetson-orin-nano-devkit" ]]; then
+		sudo cp stream_gmsl2_8cam_w_ext_fsync_p15_orin_split.sh Linux_for_Tegra/rootfs/home/ubuntu/.
+	elif [[ ${board_conf} == "jetson-agx-orin-devkit" ]]; then
+		sudo cp stream_gmsl2_8cam_w_ext_fsync_p15_agx_split.sh Linux_for_Tegra/rootfs/home/ubuntu/.
+	fi
+
+	# install vizionviewer in rootfs
+	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+		sudo ./preinstall_vizionviewer.sh
+	else
+		sudo ./preinstall_vizionviewer.sh --skip-demo
+	fi
+	sudo rm ${VV_FILE} Linux_for_Tegra/rootfs/${DM_FILE}
+
+	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+		# copy QCA9377 firmware from github
+		git clone https://git.codelinaro.org/clo/ath-firmware/ath10k-firmware.git QCA9377_WIFI
+		git clone https://oauth2:SbtQ_mC4fvJRA88_9jB7@gitlab.com/technexion-imx/qca_firmware.git QCA9377_BT
+		sudo cp -rp QCA9377_WIFI/QCA9377/hw1.0/board-2.bin Linux_for_Tegra/rootfs/lib/firmware/ath10k/QCA9377/hw1.0
+		sudo cp -rp QCA9377_WIFI/QCA9377/hw1.0/board.bin Linux_for_Tegra/rootfs/lib/firmware/ath10k/QCA9377/hw1.0
+		sudo cp -rp QCA9377_WIFI/LICENSE.qca_firmware Linux_for_Tegra/rootfs/lib/firmware/ath10k/QCA9377/hw1.0
+		sudo cp -rp QCA9377_WIFI/QCA9377/hw1.0/CNSS.TF.1.0/firmware-5.bin_CNSS.TF.1.0-00267-QCATFSWPZ-1 Linux_for_Tegra/rootfs/lib/firmware/ath10k/QCA9377/hw1.0/firmware-5.bin
+		sudo cp -rp QCA9377_BT/qca/notice.txt Linux_for_Tegra/rootfs/lib/firmware/qca
+		sudo cp -rp QCA9377_BT/qca/nvm_usb_00000302.bin Linux_for_Tegra/rootfs/lib/firmware/qca
+		sudo cp -rp QCA9377_BT/qca/rampatch_usb_00000302.bin Linux_for_Tegra/rootfs/lib/firmware/qca
+		rm -rf QCA9377_WIFI
+		rm -rf QCA9377_BT
+	fi
+
+	# copy change boot config
+	cd Linux_for_Tegra/rootfs/boot/extlinux/
+	# tweak for close quiet for more dmesg
+	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+		sudo sed -i 's/APPEND \${cbootargs} quiet/APPEND \${cbootargs}/' extlinux.conf
+	elif [[ ${board_conf} == "jetson-orin-nano-devkit" ]]; then
+		CAM_MODULE="tevs-dual"
+		if grep -q "LABEL tn-${CAM_MODULE}" extlinux.conf; then
+			echo -ne "\n### tn-$CAM_MODULE configuration already exists, skip\n"
+		else
+			echo -ne "\n### add tn-$CAM_MODULE configuration\n"
+			TEVS_CONF=$(awk "/LABEL primary/,/APPEND /" extlinux.conf | \
+			sed -e "s|LINUX /boot/Image|&\n      FDT /boot/dtb/kernel_tegra234-p3768-0000+p3767-0005-nv.dtb\n      OVERLAYS /boot/tegra234-p3767-camera-p3768-${CAM_MODULE}.dtbo|" | \
+			sed "s/LABEL primary/LABEL tn-${CAM_MODULE}/")
+			sudo bash -c "echo -e '\n\n$TEVS_CONF' >> extlinux.conf"
+		fi
+		CAM_MODULE="vls"
+		if grep -q "LABEL tn-${CAM_MODULE}" extlinux.conf; then
+			echo -ne "\n### tn-$CAM_MODULE configuration already exists, skip\n"
+		else
+			echo -ne "\n### add tn-$CAM_MODULE configuration\n"
+			TEVS_CONF=$(awk "/LABEL primary/,/APPEND /" extlinux.conf | \
+			sed -e "s|LINUX /boot/Image|&\n      FDT /boot/dtb/kernel_tegra234-p3768-0000+p3767-0005-nv.dtb\n      OVERLAYS /boot/tegra234-p3767-camera-p3768-${CAM_MODULE}.dtbo|" | \
+			sed "s/LABEL primary/LABEL tn-${CAM_MODULE}/")
+			sudo bash -c "echo -e '\n\n$TEVS_CONF' >> extlinux.conf"
+		fi
+		CAM_MODULE="vls-gm2"
+		if grep -q "LABEL tn-${CAM_MODULE}" extlinux.conf; then
+			echo -ne "\n### tn-$CAM_MODULE configuration already exists, skip\n"
+		else
+			echo -ne "\n### add tn-$CAM_MODULE configuration\n"
+			TEVS_CONF=$(awk "/LABEL primary/,/APPEND /" extlinux.conf | \
+			sed -e "s|LINUX /boot/Image|&\n      FDT /boot/dtb/kernel_tegra234-p3768-0000+p3767-0005-nv.dtb\n      OVERLAYS /boot/tegra234-p3767-camera-p3768-${CAM_MODULE}.dtbo|" | \
+			sed "s/LABEL primary/LABEL tn-${CAM_MODULE}/")
+			sudo bash -c "echo -e '\n\n$TEVS_CONF' >> extlinux.conf"
+		fi
+		CAM_MODULE="vls-gm2-fsync"
+		if grep -q "LABEL tn-${CAM_MODULE}" extlinux.conf; then
+			echo -ne "\n### tn-$CAM_MODULE configuration already exists, skip\n"
+		else
+			echo -ne "\n### add tn-$CAM_MODULE configuration\n"
+			TEVS_CONF=$(awk "/LABEL primary/,/APPEND /" extlinux.conf | \
+			sed -e "s|LINUX /boot/Image|&\n      FDT /boot/dtb/kernel_tegra234-p3768-0000+p3767-0005-nv.dtb\n      OVERLAYS /boot/tegra234-p3767-camera-p3768-${CAM_MODULE}.dtbo|" | \
+			sed "s/LABEL primary/LABEL tn-${CAM_MODULE}/")
+			sudo bash -c "echo -e '\n\n$TEVS_CONF' >> extlinux.conf"
+		fi
+		CAM_MODULE="vls-gm2-tunnel"
+		if grep -q "LABEL tn-${CAM_MODULE}" extlinux.conf; then
+			echo -ne "\n### tn-$CAM_MODULE configuration already exists, skip\n"
+		else
+			echo -ne "\n### add tn-$CAM_MODULE configuration\n"
+			TEVS_CONF=$(awk "/LABEL primary/,/APPEND /" extlinux.conf | \
+			sed -e "s|LINUX /boot/Image|&\n      FDT /boot/dtb/kernel_tegra234-p3768-0000+p3767-0005-nv.dtb\n      OVERLAYS /boot/tegra234-p3767-camera-p3768-${CAM_MODULE}.dtbo|" | \
+			sed "s/LABEL primary/LABEL tn-${CAM_MODULE}/")
+			sudo bash -c "echo -e '\n\n$TEVS_CONF' >> extlinux.conf"
+		fi
+		CAM_MODULE="vls-gm2-tunnel-fsync"
+		if grep -q "LABEL tn-${CAM_MODULE}" extlinux.conf; then
+			echo -ne "\n### tn-$CAM_MODULE configuration already exists, skip\n"
+		else
+			echo -ne "\n### add tn-$CAM_MODULE configuration\n"
+			TEVS_CONF=$(awk "/LABEL primary/,/APPEND /" extlinux.conf | \
+			sed -e "s|LINUX /boot/Image|&\n      FDT /boot/dtb/kernel_tegra234-p3768-0000+p3767-0005-nv.dtb\n      OVERLAYS /boot/tegra234-p3767-camera-p3768-${CAM_MODULE}.dtbo|" | \
+			sed "s/LABEL primary/LABEL tn-${CAM_MODULE}/")
+			sudo bash -c "echo -e '\n\n$TEVS_CONF' >> extlinux.conf"
+		fi
+		CAM_MODULE="vls-gm2-fsync-external"
+		if grep -q "LABEL tn-${CAM_MODULE}" extlinux.conf; then
+			echo -ne "\n### tn-$CAM_MODULE configuration already exists, skip\n"
+		else
+			echo -ne "\n### add tn-$CAM_MODULE configuration\n"
+			TEVS_CONF=$(awk "/LABEL primary/,/APPEND /" extlinux.conf | \
+			sed -e "s|LINUX /boot/Image|&\n      FDT /boot/dtb/kernel_tegra234-p3768-0000+p3767-0005-nv.dtb\n      OVERLAYS /boot/tegra234-p3767-camera-p3768-${CAM_MODULE}.dtbo|" | \
+			sed "s/LABEL primary/LABEL tn-${CAM_MODULE}/")
+			sudo bash -c "echo -e '\n\n$TEVS_CONF' >> extlinux.conf"
+		fi
+
+		CAM_MODULE="vls-gm2"
+		sudo sed -i "s/DEFAULT .*/DEFAULT tn-${CAM_MODULE}/" extlinux.conf
+	elif [[ ${board_conf} == "jetson-agx-orin-devkit" ]]; then
+		CAM_MODULE="vls-gm2"
+		if grep -q "LABEL tn-${CAM_MODULE}" extlinux.conf; then
+			echo -ne "\n### tn-$CAM_MODULE configuration already exists, skip\n"
+		else
+			echo -ne "\n### add tn-$CAM_MODULE configuration\n"
+			TEVS_CONF=$(awk "/LABEL primary/,/APPEND /" extlinux.conf | \
+			sed -e "s|LINUX /boot/Image|&\n      FDT /boot/dtb/kernel_tegra234-p3737-0000+p3701-0005-nv.dtb\n      OVERLAYS /boot/tegra234-p3737-camera-${CAM_MODULE}-overlay.dtbo|" | \
+			sed "s/LABEL primary/LABEL tn-${CAM_MODULE}/")
+			sudo bash -c "echo -e '\n\n$TEVS_CONF' >> extlinux.conf"
+		fi
+		CAM_MODULE="vls-gm2-fsync"
+		if grep -q "LABEL tn-${CAM_MODULE}" extlinux.conf; then
+			echo -ne "\n### tn-$CAM_MODULE configuration already exists, skip\n"
+		else
+			echo -ne "\n### add tn-$CAM_MODULE configuration\n"
+			TEVS_CONF=$(awk "/LABEL primary/,/APPEND /" extlinux.conf | \
+			sed -e "s|LINUX /boot/Image|&\n      FDT /boot/dtb/kernel_tegra234-p3737-0000+p3701-0005-nv.dtb\n      OVERLAYS /boot/tegra234-p3737-camera-${CAM_MODULE}-overlay.dtbo|" | \
+			sed "s/LABEL primary/LABEL tn-${CAM_MODULE}/")
+			sudo bash -c "echo -e '\n\n$TEVS_CONF' >> extlinux.conf"
+		fi
+		CAM_MODULE="vls-gm2-tunnel"
+		if grep -q "LABEL tn-${CAM_MODULE}" extlinux.conf; then
+			echo -ne "\n### tn-$CAM_MODULE configuration already exists, skip\n"
+		else
+			echo -ne "\n### add tn-$CAM_MODULE configuration\n"
+			TEVS_CONF=$(awk "/LABEL primary/,/APPEND /" extlinux.conf | \
+			sed -e "s|LINUX /boot/Image|&\n      FDT /boot/dtb/kernel_tegra234-p3737-0000+p3701-0005-nv.dtb\n      OVERLAYS /boot/tegra234-p3737-camera-${CAM_MODULE}-overlay.dtbo|" | \
+			sed "s/LABEL primary/LABEL tn-${CAM_MODULE}/")
+			sudo bash -c "echo -e '\n\n$TEVS_CONF' >> extlinux.conf"
+		fi
+		CAM_MODULE="vls-gm2-tunnel-fsync"
+		if grep -q "LABEL tn-${CAM_MODULE}" extlinux.conf; then
+			echo -ne "\n### tn-$CAM_MODULE configuration already exists, skip\n"
+		else
+			echo -ne "\n### add tn-$CAM_MODULE configuration\n"
+			TEVS_CONF=$(awk "/LABEL primary/,/APPEND /" extlinux.conf | \
+			sed -e "s|LINUX /boot/Image|&\n      FDT /boot/dtb/kernel_tegra234-p3737-0000+p3701-0005-nv.dtb\n      OVERLAYS /boot/tegra234-p3737-camera-${CAM_MODULE}-overlay.dtbo|" | \
+			sed "s/LABEL primary/LABEL tn-${CAM_MODULE}/")
+			sudo bash -c "echo -e '\n\n$TEVS_CONF' >> extlinux.conf"
+		fi
+		CAM_MODULE="vls-gm2-fsync-external"
+		if grep -q "LABEL tn-${CAM_MODULE}" extlinux.conf; then
+			echo -ne "\n### tn-$CAM_MODULE configuration already exists, skip\n"
+		else
+			echo -ne "\n### add tn-$CAM_MODULE configuration\n"
+			TEVS_CONF=$(awk "/LABEL primary/,/APPEND /" extlinux.conf | \
+			sed -e "s|LINUX /boot/Image|&\n      FDT /boot/dtb/kernel_tegra234-p3737-0000+p3701-0005-nv.dtb\n      OVERLAYS /boot/tegra234-p3737-camera-${CAM_MODULE}-overlay.dtbo|" | \
+			sed "s/LABEL primary/LABEL tn-${CAM_MODULE}/")
+			sudo bash -c "echo -e '\n\n$TEVS_CONF' >> extlinux.conf"
+		fi
+
+		CAM_MODULE="vls-gm2"
+		sudo sed -i "s/DEFAULT .*/DEFAULT tn-${CAM_MODULE}/" extlinux.conf
+	fi
+	cd ${CUR_DIR}
+
+	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+		# change background to TecnNexion logo
+		wget -c -t 5 --no-check-certificate https://download.technexion.com/development_resources/.technexion_logo/PPT2.jpg
+		sudo mv PPT2.jpg Linux_for_Tegra/rootfs/usr/share/backgrounds/
+		sudo sed -i 's|nv_background="/usr/share/backgrounds/NVIDIA_Wallpaper.jpg"|nv_background="/usr/share/backgrounds/PPT2.jpg"|' Linux_for_Tegra/rootfs/etc/xdg/autostart/nvbackground.sh
+	fi
 
 	# tweak mb2 dts to make HDMI support 4K
 #	sed -i '8i\\' Linux_for_Tegra/${PIMNUX_DIR}/tegra234-mb2-bct-scr-p3767-0000.dts
@@ -329,13 +498,40 @@ create_demo_image (){
 	# create new demo_image
 	cd Linux_for_Tegra/
 	if [[ ${qspi_only} -eq 1 ]];then
-		sudo ./tools/kernel_flash/l4t_initrd_flash.sh \
-			-p "-c ${BL_CFG}/flash_t234_qspi.xml --no-systemimg" \
-			--showlogs ${flash_opt} --network usb0 ${board_conf} internal
+		if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+			sudo ./tools/kernel_flash/l4t_initrd_flash.sh \
+				-p "-c ${BL_CFG}/flash_t234_qspi.xml --no-systemimg" \
+				--showlogs ${flash_opt} --network usb0 ${board_conf} internal
+		else
+			echo -ne "# don't support ${board_conf} for qspi-only\n"
+		fi
 	else
-		sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device ${rootfs_dev_p1[0]} -c tools/kernel_flash/flash_l4t_external.xml \
-			-p "-c ${BL_CFG}/flash_t234_qspi.xml" \
-			--showlogs ${flash_opt} --network usb0 ${board_conf} internal
+		if [[ ${board_conf} == "jetson-orin-nano-devkit" ]]; then
+			if [[ ${flash_opt} == "--no-flash" ]];then
+				if [ -f sd-blob.img ]; then
+					echo -ne "# detected existing sd-blob.img and removing it\n"
+					sudo rm -f sd-blob.img
+				fi
+				sudo ./tools/jetson-disk-image-creator.sh -o sd-blob-tn.img -b ${board_conf} -d ${rootfs_dev[0]}
+			else
+				echo -ne "# only support no-flash operation\n"
+			fi
+		elif [[ ${board_conf} == "jetson-agx-orin-devkit" ]]; then
+			if [[ ${flash_opt} == "--no-flash" ]];then
+			sudo BOARDID=3701 \
+					BOARDSKU=0005 \
+					FAB=500 \
+					BOARDREV=M.0 \
+					RAMCODE=3 \
+					./flash.sh ${flash_opt} ${board_conf} internal
+			else
+				echo -ne "# only support no-flash operation\n"
+			fi
+		else
+			sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device ${rootfs_dev_p1[0]} -c tools/kernel_flash/flash_l4t_external.xml \
+				-p "-c ${BL_CFG}/flash_t234_qspi.xml" \
+				--showlogs ${flash_opt} --network usb0 ${board_conf} internal
+		fi
 	fi
 	cd ${CUR_DIR}
 	echo -ne "### create demo_image done\n"
@@ -343,10 +539,12 @@ create_demo_image (){
 
 usage() {
 	echo -e "$0 \ndownload the Technexion Jetpack -b <baseboard>" 1>&2
-	echo "-b: baseboard <TEK6040-ORIN-NANO/ TEK6100-ORIN-NX>" 1>&2
+	echo "-b: baseboard <TEK6040-ORIN-NANO/ TEK6100-ORIN-NX" 1>&2
+	echo "               JETSON-ORIN-NANO-EVK/ JETSON-AGX-ORIN-EVK>" 1>&2
 	echo "" 1>&2
 	echo "Jetson Orin series:" 1>&2
-	echo "TEK6040-ORIN-NANO| TEK6100-ORIN-NX" 1>&2
+	echo "  TEK6040-ORIN-NANO| TEK6100-ORIN-NX" 1>&2
+	echo "  JETSON-ORIN-NANO-EVK| JETSON-AGX-ORIN-EVK" 1>&2
 	echo "" 1>&2
 	echo "-t: tag for sync code:" 1>&2
 	echo "${VALID_TAG}" 1>&2
@@ -369,6 +567,16 @@ setup_env_vars () {
 			board_conf="tn-tek6100-orin-nx"
 			rootfs_dev=("NVMe" "USB")
 			rootfs_dev_p1=("nvme0n1p1" "sda1")
+			;;
+		JETSON-ORIN-NANO-EVK)
+			board_conf="jetson-orin-nano-devkit"
+			rootfs_dev=("SD" "USB")
+			rootfs_dev_p1=("mmcblk0p1" "sda1")
+			;;
+		JETSON-AGX-ORIN-EVK)
+			board_conf="jetson-agx-orin-devkit"
+			rootfs_dev=("eMMC" "USB")
+			rootfs_dev_p1=("mmcblk1p1" "sda1")
 			;;
 		*)
 			echo -e "invalid baseboard option!!\n"
