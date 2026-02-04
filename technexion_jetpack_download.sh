@@ -302,11 +302,11 @@ mv_needed_files_for_demo_image(){
 
 	# copy script files
 	cd ${CUR_DIR}
-	sudo cp set_config.sh Linux_for_Tegra/rootfs/home/ubuntu/.
+	sudo cp -rp set_config.sh Linux_for_Tegra/rootfs/home/ubuntu/.
 	if [[ ${board_conf} == "jetson-orin-nano-devkit" ]]; then
-		sudo cp stream_gmsl2_8cam_w_ext_fsync_p15_orin_split.sh Linux_for_Tegra/rootfs/home/ubuntu/.
+		sudo cp -rp stream_gmsl2_8cam_w_ext_fsync_p15_orin_split.sh Linux_for_Tegra/rootfs/home/ubuntu/.
 	elif [[ ${board_conf} == "jetson-agx-orin-devkit" ]]; then
-		sudo cp stream_gmsl2_8cam_w_ext_fsync_p15_agx_split.sh Linux_for_Tegra/rootfs/home/ubuntu/.
+		sudo cp -rp stream_gmsl2_8cam_w_ext_fsync_p15_agx_split.sh Linux_for_Tegra/rootfs/home/ubuntu/.
 	fi
 
 	# install vizionviewer in rootfs
@@ -315,7 +315,12 @@ mv_needed_files_for_demo_image(){
 	else
 		sudo ./preinstall_vizionviewer.sh --skip-demo
 	fi
-	sudo rm ${VV_FILE} Linux_for_Tegra/rootfs/${DM_FILE}
+
+	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+		sudo rm ${VV_FILE} Linux_for_Tegra/rootfs/${DM_FILE}
+	else
+		sudo rm ${VV_FILE}
+	fi
 
 	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
 		# copy QCA9377 firmware from github
