@@ -524,7 +524,7 @@ create_demo_image (){
 					echo -ne "# detected existing sd-blob.img and removing it\n"
 					sudo rm -f sd-blob.img
 				fi
-				sudo ./tools/jetson-disk-image-creator.sh -o sd-blob-tn.img -b ${board_conf} -d ${rootfs_dev[0]}
+				sudo ./tools/jetson-disk-image-creator.sh -o sd-blob.img -b ${board_conf} -d ${rootfs_dev[0]}
 			else
 				echo -ne "# only support no-flash operation\n"
 			fi
