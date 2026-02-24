@@ -518,24 +518,13 @@ create_demo_image (){
 			echo -ne "# don't support ${board_conf} for qspi-only\n"
 		fi
 	else
-		if [[ ${board_conf} == "jetson-orin-nano-devkit" ]]; then
-			if [[ ${flash_opt} == "--no-flash" ]];then
+		if [[ ${board_conf} == "jetson-orin-nano-devkit" ]] || [[ ${board_conf} == "jetson-agx-orin-devkit" ]]; then
+			if [[ ${flash_opt} == "--no-flash" ]]; then
 				if [ -f sd-blob.img ]; then
 					echo -ne "# detected existing sd-blob.img and removing it\n"
 					sudo rm -f sd-blob.img
 				fi
 				sudo ./tools/jetson-disk-image-creator.sh -o sd-blob.img -b ${board_conf} -d ${rootfs_dev[0]}
-			else
-				echo -ne "# only support no-flash operation\n"
-			fi
-		elif [[ ${board_conf} == "jetson-agx-orin-devkit" ]]; then
-			if [[ ${flash_opt} == "--no-flash" ]];then
-			sudo BOARDID=3701 \
-					BOARDSKU=0005 \
-					FAB=500 \
-					BOARDREV=M.0 \
-					RAMCODE=3 \
-					./flash.sh ${flash_opt} ${board_conf} internal
 			else
 				echo -ne "# only support no-flash operation\n"
 			fi
@@ -590,8 +579,8 @@ setup_env_vars () {
 			;;
 		JETSON-AGX-ORIN-EVK)
 			board_conf="jetson-agx-orin-devkit"
-			rootfs_dev=("eMMC" "USB")
-			rootfs_dev_p1=("mmcblk1p1" "sda1")
+			rootfs_dev=("SD")
+			rootfs_dev_p1=("mmcblk1p1")
 			;;
 		*)
 			echo -e "invalid baseboard option!!\n"
