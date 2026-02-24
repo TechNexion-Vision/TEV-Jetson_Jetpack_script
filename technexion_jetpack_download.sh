@@ -725,9 +725,9 @@ else
 	echo "valid input: dev=$d"
 	DEV=$d
 	if [[ ${board_conf} == "jetson-agx-orin-devkit" ]]; then
-		if [ ${DEV} != "vls-gm2" ] || [ ${DEV} != "vls-gm2-fsync" ] || \
-			[ ${DEV} != "vls-gm2-tunnel" ] || [ ${DEV} != "vls-gm2-tunnel-fsync" ] || \
-			[ ${DEV} != "vls-gm2-fsync-external" ]; then
+		if [[ ${DEV} != "vls-gm2" ]] && [[ ${DEV} != "vls-gm2-fsync" ]] && \
+			[[ ${DEV} != "vls-gm2-tunnel" ]] && [[ ${DEV} != "vls-gm2-tunnel-fsync" ]] && \
+			[[ ${DEV} != "vls-gm2-fsync-external" ]]; then
 			echo -e "### ${board_conf} don't support device ${DEV}\n!"
 			exit 1
 		fi
