@@ -11,9 +11,9 @@ DES_IDX="0 0 1 1 2 2 3 3"
 echo "[   INFO ] Set PWM 30 Hz at pin 15 of orin nano 40-pin header"
 PWM_PATH="/sys/class/pwm/pwmchip0"
 if [ ! -d "$PWM_PATH/pwm0" ]; then
-    echo "[   INFO ] Export pwm0"
-    echo 0 > "$PWM_PATH/export"
-    sleep 0.1
+	echo "[   INFO ] Export pwm0"
+	echo 0 > "$PWM_PATH/export"
+	sleep 0.1
 else
 	echo 0 > $PWM_PATH/pwm0/enable
 fi
@@ -29,34 +29,34 @@ echo 1 > /sys/class/pwm/pwmchip0/pwm0/enable
 # Detect existing cameras (from tevs subdev)
 EXIST_IDX=""
 for namefile in /sys/class/video4linux/v4l-subdev*/name; do
-    name=$(cat "$namefile")
-    case "$name" in
-        tevs*)
+	name=$(cat "$namefile")
+	case "$name" in
+		tevs*)
 			echo "[   INFO ] Found cameras: $name"
 			# tevs 9-0039 -> extract last bus 9
 			bus=$(echo "$name" | awk '{print $2}' | cut -d'-' -f1)
-            # tevs 9-0039 -> extract last hex 0039
-            hexaddr=$(echo "$name" | awk '{print $2}' | cut -d'-' -f2)
-            i2caddr=$(printf "%d" "0x$hexaddr")
+			# tevs 9-0039 -> extract last hex 0039
+			hexaddr=$(echo "$name" | awk '{print $2}' | cut -d'-' -f2)
+			i2caddr=$(printf "%d" "0x$hexaddr")
 
-            idx=0
-            for cam in $CAM_ARR; do
-                cam_dec=$(printf "%d" "$cam")
+			idx=0
+			for cam in $CAM_ARR; do
+				cam_dec=$(printf "%d" "$cam")
 				cam_bus=$(echo "$BUS_ARR" | awk "{ print \$$((idx+1)) }")
-				
+
 				if [ "$bus" -eq "$cam_bus" ] && [ "$i2caddr" -eq "$cam_dec" ]; then
-                    EXIST_IDX="$EXIST_IDX $idx"
-                fi
-				
-                idx=$((idx+1))
-            done
+					EXIST_IDX="$EXIST_IDX $idx"
+				fi
+
+				idx=$((idx+1))
+			done
 			;;
-    esac
+	esac
 done
 
 if [ -z "$EXIST_IDX" ]; then
-    echo "[   INFO ] No tevs cameras detected. Exiting."
-    exit 0
+	echo "[   INFO ] No tevs cameras detected. Exiting."
+	exit 0
 fi
 
 # normalize leading spaces
@@ -68,8 +68,8 @@ DES_EXPECT=""
 DES_STARTED=""
 DES_RESET=""
 for idx in $EXIST_IDX; do
-    des=$(echo "$DES_IDX" | awk "{ print \$$((idx+1)) }")
-    DES_EXPECT="$DES_EXPECT $des"
+	des=$(echo "$DES_IDX" | awk "{ print \$$((idx+1)) }")
+	DES_EXPECT="$DES_EXPECT $des"
 done
 DES_EXPECT=$(echo "$DES_EXPECT" | sed -e 's/^ *//' -e 's/  */ /g')
 echo "[   INFO ] Expected cameras at deserializer: [$DES_EXPECT]"
@@ -106,35 +106,35 @@ VIDEO_HEIGHT=480
 # Stream only EXISTING cameras
 CAM_COUNT=0
 for idx in $EXIST_IDX; do
-    cam_addr=$(echo "$CAM_ARR" | awk "{ print \$$((idx+1)) }")
-    cam_bus=$(echo "$BUS_ARR" | awk "{ print \$$((idx+1)) }")
+	cam_addr=$(echo "$CAM_ARR" | awk "{ print \$$((idx+1)) }")
+	cam_bus=$(echo "$BUS_ARR" | awk "{ print \$$((idx+1)) }")
 
-    echo "[   INFO ] Camera $idx stream (bus $cam_bus, addr $cam_addr, /dev/video$CAM_COUNT)"
+	echo "[   INFO ] Camera $idx stream (bus $cam_bus, addr $cam_addr, /dev/video$CAM_COUNT)"
 
-    cam_ver_year=$(i2ctransfer -f -y $cam_bus w2@$cam_addr 0x30 0x00 r1 | sed 's/0x//g')
-    cam_ver_month=$(i2ctransfer -f -y $cam_bus w2@$cam_addr 0x30 0x01 r1 | sed 's/0x//g')
-    cam_ver_rev=$(i2ctransfer -f -y $cam_bus w2@$cam_addr 0x30 0x02 r1 | sed 's/0x//g')
-    cam_ver_build=$(i2ctransfer -f -y $cam_bus w2@$cam_addr 0x30 0x03 r1 | sed 's/0x//g')
-	
+	cam_ver_year=$(i2ctransfer -f -y $cam_bus w2@$cam_addr 0x30 0x00 r1 | sed 's/0x//g')
+	cam_ver_month=$(i2ctransfer -f -y $cam_bus w2@$cam_addr 0x30 0x01 r1 | sed 's/0x//g')
+	cam_ver_rev=$(i2ctransfer -f -y $cam_bus w2@$cam_addr 0x30 0x02 r1 | sed 's/0x//g')
+	cam_ver_build=$(i2ctransfer -f -y $cam_bus w2@$cam_addr 0x30 0x03 r1 | sed 's/0x//g')
+
 	# layout: column = idx % 4, row = idx / 4
-    col=$(( CAM_COUNT % 4 ))
-    row=$(( CAM_COUNT / 4 ))
-	
+	col=$(( CAM_COUNT % 4 ))
+	row=$(( CAM_COUNT / 4 ))
+
 	case "$col" in
-        0) winx=$SINK_POS_X_0 ;;
-        1) winx=$SINK_POS_X_1 ;;
-        2) winx=$SINK_POS_X_2 ;;
-        3) winx=$SINK_POS_X_3 ;;
-        *) winx=$SINK_POS_X_0 ;;
-    esac
+		0) winx=$SINK_POS_X_0 ;;
+		1) winx=$SINK_POS_X_1 ;;
+		2) winx=$SINK_POS_X_2 ;;
+		3) winx=$SINK_POS_X_3 ;;
+		*) winx=$SINK_POS_X_0 ;;
+	esac
 
-    case "$row" in
-        0) winy=$SINK_POS_Y_0 ;;
-        1) winy=$SINK_POS_Y_1 ;;
-        *) winy=$SINK_POS_Y_0 ;;
-    esac
+	case "$row" in
+		0) winy=$SINK_POS_Y_0 ;;
+		1) winy=$SINK_POS_Y_1 ;;
+		*) winy=$SINK_POS_Y_0 ;;
+	esac
 
-    DISPLAY=:0 gst-launch-1.0 nvv4l2camerasrc device=/dev/video$CAM_COUNT ! \
+	DISPLAY=:0 gst-launch-1.0 nvv4l2camerasrc device=/dev/video$CAM_COUNT ! \
 	"video/x-raw(memory:NVMM), format=UYVY, width=$VIDEO_WIDTH, height=$VIDEO_HEIGHT" ! \
 	queue ! nvvidconv ! "video/x-raw, format=NV12" ! \
 	textoverlay text="CAM$idx $(printf "%d" 0x$cam_ver_year).$(printf "%d" 0x$cam_ver_month).$(printf "%d" 0x$cam_ver_rev).$(printf "%d" 0x$cam_ver_build)" \
@@ -142,10 +142,10 @@ for idx in $EXIST_IDX; do
 	queue ! nvvidconv ! "video/x-raw(memory:NVMM), format=NV12, width=$SINK_SIZE_X, height=$SINK_SIZE_Y" ! \
 	nv3dsink window-width=$SINK_SIZE_X window-height=$SINK_SIZE_Y \
 	window-x=$winx window-y=$winy sync=false --no-position &
-	
+
 	CAM_COUNT=$((CAM_COUNT+1))
-    sleep 1
-	
+	sleep 1
+
 	des_idx=$(echo "$DES_IDX" | awk "{ print \$$((idx+1)) }")
 
 	# record camera stream in deserializer
@@ -159,7 +159,7 @@ for idx in $EXIST_IDX; do
 
 	# check counter nubmer equal expected nubmer or not
 	if [ "$started_cnt" -eq "$expected_cnt" ] && \
-	   ! echo " $DES_RESET " | grep -q " $des_idx "; then
+	! echo " $DES_RESET " | grep -q " $des_idx "; then
 
 		echo "[   INFO ] All cameras of DES $des_idx started, reset serializer"
 
@@ -173,7 +173,7 @@ for idx in $EXIST_IDX; do
 				# i2ctransfer -f -y "$ser_bus" w3@"$ser_addr" 0x03 0x30 0x40
 			fi
 		done
-		
+
 		for j in $EXIST_IDX; do
 			des_j=$(echo "$DES_IDX" | awk "{ print \$$((j+1)) }")
 			if [ "$des_j" = "$des_idx" ]; then
