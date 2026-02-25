@@ -43,9 +43,9 @@ get_nvidia_jetpack() {
 		return 0
 	fi
 	echo -ne "\n### Get nvidia jetpack source code\n"
-	wget $JETPACK -q --tries=10 -O jetpack.tbz2
-	wget $ROOTFS -q --tries=10 -O rootfs.tbz2
-	wget $PUBLIC -q --tries=10 -O public.tbz2
+	wget $JETPACK -q --tries=10 --retry-connrefused --waitretry=5 --timeout=30 --read-timeout=60 --continue -O jetpack.tbz2
+	wget $ROOTFS -q --tries=10 --retry-connrefused --waitretry=5 --timeout=30 --read-timeout=60 --continue -O rootfs.tbz2
+	wget $PUBLIC -q --tries=10 --retry-connrefused --waitretry=5 --timeout=30 --read-timeout=60 --continue -O public.tbz2
 
 	tar -jxf jetpack.tbz2
 	tar -jxf public.tbz2
@@ -150,7 +150,7 @@ create_gcc_tool_chain () {
 	fi
 	echo -ne "\n### Download gcc tool chain\n"
 	cd ${SRC_DIR}/kernel/
-	wget -q --no-check-certificate ${TOOLCHAIN} --tries=10 -O toolchain.tar.bz2
+	wget -q --no-check-certificate ${TOOLCHAIN} --tries=10 --tries=10 --retry-connrefused --waitretry=5 --timeout=30 --read-timeout=60 --continue -O toolchain.tar.bz2
 	tar xf toolchain.tar.bz2
 	mv aarch64--glibc--stable-2022.08-1 gcc_tool_chain
 	rm -rf toolchain.tar.bz2
