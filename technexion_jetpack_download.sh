@@ -73,7 +73,7 @@ run_nvidia_script_and_sync_code() {
 sync_tn_source_code() {
 	echo -ne "\n### Clone source code from Technexion github\n"
 
-	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+	if [[ ${board_conf} == tn-tek* ]]; then
 		echo -ne "# kernel\n"
 		cd ${SRC_DIR}/${KERNEL_DIR}
 		if [ -z "$(git branch | grep ${BRANCH})" ]; then
@@ -122,7 +122,7 @@ sync_tn_source_code() {
 	fi
 	cd ${CUR_DIR}
 
-	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+	if [[ ${board_conf} == tn-tek* ]]; then
 		echo -ne "# technexion pinmux file(xlsm)\n"
 		cd ${SRC_DIR}
 		if [ ! -d "TEK-ORIN_Orin-Nano_pinmux" ]; then
@@ -162,7 +162,7 @@ compile_kernel (){
 	echo -ne "\n### compile kernel\n"
 	cd ${SRC_DIR}
 	if [ -z "$(grep tegra_tn_defconfig kernel_src_build_env.sh)" ]; then
-		if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+		if [[ ${board_conf} == tn-tek* ]]; then
 			# update kernel config
 			sed -zi 's|KERNEL_DEF_CONFIG="defconfig"\n|KERNEL_DEF_CONFIG="tegra_tn_defconfig"\n|' kernel_src_build_env.sh
 		fi
@@ -192,7 +192,7 @@ mv_needed_files_for_demo_image(){
 
 	# copy device-tree
 	sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/* Linux_for_Tegra/kernel/dtb/
-	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+	if [[ ${board_conf} == tn-tek* ]]; then
 		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/tegra234-p3768-0000+p3767-000*-nv.dtb Linux_for_Tegra/rootfs/boot/
 		sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*tek* Linux_for_Tegra/rootfs/boot/
 	elif [[ ${board_conf} == "jetson-orin-nano-devkit" ]]; then
@@ -204,7 +204,7 @@ mv_needed_files_for_demo_image(){
 	fi
 	sudo cp -rp ${SRC_DIR}/${KERNEL_OUT}/kernel-devicetree/generic-dts/dtbs/*hdmi* Linux_for_Tegra/rootfs/boot/
 
-	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+	if [[ ${board_conf} == tn-tek* ]]; then
 		# copy pinmux file
 		sudo cp -rp ${SRC_DIR}/TEK-ORIN_Orin-Nano_pinmux/Orin-tek-orin-a1-gpio-default.dtsi Linux_for_Tegra/bootloader/
 		sudo cp -rp ${SRC_DIR}/TEK-ORIN_Orin-Nano_pinmux/Orin-tek-orin-a1-pinmux.dtsi Linux_for_Tegra/${PIMNUX_DIR}/
@@ -237,10 +237,6 @@ mv_needed_files_for_demo_image(){
 			r36.4.ga)
 				VV_FILE="vizionviewer-25.06.1-linuxarm64.tar.xz"
 				VV_URL="https://download.technexion.com/vizionviewer/linux_arm64/${VV_FILE}"
-				if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
-					DM_FILE="jetpack_8_cam_demo_patch_for_25.06.1.tar.xz"
-					DM_URL="https://download.technexion.com/vizionviewer/linux_arm64/${DM_FILE}"
-				fi
 				;;
 			*)
 				# Let VV_URL empty, cause error when try to download
@@ -279,18 +275,15 @@ mv_needed_files_for_demo_image(){
 				VV_FILE=${VV_LIST[$i]}
 			fi
 		done
-		if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
-			# download matched 8_cam_demo
-			DM_VER=$(echo "${VV_FILE}" | cut -d '-' -f 2)
-			DM_FILE='jetpack_8_cam_demo_patch_for_'${DM_VER}'.tar.xz'
-			DM_URL='https://download.technexion.com/vizionviewer/linux_arm64/'${DM_FILE}
-		fi
 	fi
 	wget -c -t --no-check-certificate ${VV_URL}
 	tar -xJf ${VV_FILE}
 	sudo mv *.deb Linux_for_Tegra/rootfs/usr/share/vizionviewer/
 
-	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+	if [[ ${board_conf} == tn-tek6* ]]; then
+		# 8 cam demo app only support vls
+		DM_FILE="jetpack_8_cam_demo_patch_for_25.06.1.tar.xz"
+		DM_URL='https://download.technexion.com/vizionviewer/linux_arm64/'${DM_FILE}
 		wget -c -t --no-check-certificate ${DM_URL}
 		sudo mv ${DM_FILE} Linux_for_Tegra/rootfs/
 	fi
@@ -310,19 +303,15 @@ mv_needed_files_for_demo_image(){
 	fi
 
 	# install vizionviewer in rootfs
-	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+	if [[ ${board_conf} == tn-tek6* ]]; then
 		sudo ./preinstall_vizionviewer.sh
-	else
-		sudo ./preinstall_vizionviewer.sh --skip-demo
-	fi
-
-	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
 		sudo rm ${VV_FILE} Linux_for_Tegra/rootfs/${DM_FILE}
 	else
+		sudo ./preinstall_vizionviewer.sh --skip-demo
 		sudo rm ${VV_FILE}
 	fi
 
-	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+	if [[ ${board_conf} == tn-tek* ]]; then
 		# copy QCA9377 firmware from github
 		git clone https://git.codelinaro.org/clo/ath-firmware/ath10k-firmware.git QCA9377_WIFI
 		git clone https://oauth2:SbtQ_mC4fvJRA88_9jB7@gitlab.com/technexion-imx/qca_firmware.git QCA9377_BT
@@ -340,7 +329,7 @@ mv_needed_files_for_demo_image(){
 	# copy change boot config
 	cd Linux_for_Tegra/rootfs/boot/extlinux/
 	# tweak for close quiet for more dmesg
-	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+	if [[ ${board_conf} == tn-tek* ]]; then
 		sudo sed -i 's/APPEND \${cbootargs} quiet/APPEND \${cbootargs}/' extlinux.conf
 	elif [[ ${board_conf} == "jetson-orin-nano-devkit" ]]; then
 		CAM_MODULE="tevs-dual"
@@ -473,7 +462,7 @@ mv_needed_files_for_demo_image(){
 	fi
 	cd ${CUR_DIR}
 
-	if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+	if [[ ${board_conf} == tn-tek* ]]; then
 		# change background to TecnNexion logo
 		wget -c -t 5 --no-check-certificate https://download.technexion.com/development_resources/.technexion_logo/PPT2.jpg
 		sudo mv PPT2.jpg Linux_for_Tegra/rootfs/usr/share/backgrounds/
@@ -510,7 +499,7 @@ create_demo_image (){
 	# create new demo_image
 	cd Linux_for_Tegra/
 	if [[ ${qspi_only} -eq 1 ]];then
-		if [[ ${board_conf} == "tn-tek6040-orin-nano" ]] || [[ ${board_conf} == "tn-tek6100-orin-nano" ]]; then
+		if [[ ${board_conf} == tn-tek* ]]; then
 			sudo ./tools/kernel_flash/l4t_initrd_flash.sh \
 				-p "-c ${BL_CFG}/flash_t234_qspi.xml --no-systemimg" \
 				--showlogs ${flash_opt} --network usb0 ${board_conf} internal
