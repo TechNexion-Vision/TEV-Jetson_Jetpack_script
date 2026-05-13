@@ -81,10 +81,10 @@ sync_tn_source_code() {
 			git fetch tn-github ${BRANCH}
 			git checkout -b ${BRANCH} tn-github/${BRANCH}
 		else
-			git pull tn-github ${BRANCH}
+			git checkout ${BRANCH} && git pull tn-github ${BRANCH}
 		fi
-		git fetch tn-github --tags
 		if [[ $USING_TAG -eq 1 ]];then
+			git fetch tn-github --tags
 			git reset --hard $TAG
 		fi
 		cd ${CUR_DIR}
@@ -98,9 +98,10 @@ sync_tn_source_code() {
 		git checkout -b ${BRANCH_DT} tn-github/${BRANCH_DT}
 		git fetch tn-github --tags
 	else
-		git pull tn-github ${BRANCH_DT}
+		git checkout ${BRANCH_DT} && git pull tn-github ${BRANCH_DT}
 	fi
 	if [[ $USING_TAG -eq 1 ]];then
+		git fetch tn-github --tags
 		git reset --hard $TAG
 	fi
 	cd ${CUR_DIR}
@@ -112,12 +113,12 @@ sync_tn_source_code() {
 		echo 'obj-m += technexion/' >> drivers/media/i2c/Makefile
 		cd ${CAM_DIR}
 		git checkout ${BRANCH}
-		git fetch origin --tags
 	else
 		cd ${CAM_DIR}
 		git pull origin ${BRANCH}
 	fi
 	if [[ $USING_TAG -eq 1 ]];then
+		git fetch origin --tags
 		git reset --hard $TAG
 	fi
 	cd ${CUR_DIR}
@@ -129,12 +130,12 @@ sync_tn_source_code() {
 			git clone -o tn-github ${GIT_URL}/TEV-JetsonOrin-Nano_pinmux.git TEK-ORIN_Orin-Nano_pinmux
 			cd TEK-ORIN_Orin-Nano_pinmux
 			git checkout ${BRANCH}
-			git fetch tn-github --tags
 		else
 			cd TEK-ORIN_Orin-Nano_pinmux
 			git pull tn-github ${BRANCH}
 		fi
 		if [[ $USING_TAG -eq 1 ]];then
+			git fetch tn-github --tags
 			git reset --hard $TAG
 		fi
 		cd ${CUR_DIR}
@@ -696,7 +697,6 @@ if [ -z "${t}" ]; then
 else
 	echo "valid input: t=$t"
 	TAG=$t
-	TEK_TAG="${TAG}_TEK-ORIN-a1"
 fi
 
 if [ -z "${v}" ]; then
