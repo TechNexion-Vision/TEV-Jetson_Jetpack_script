@@ -13,11 +13,6 @@ VALID_BOOT=("tevs-dual" "vls" "vls-gm2" "vls-gm2-fsync" "vls-gm2-tunnel" "vls-gm
 
 USING_TAG=0
 
-# nvidia jetpack source code
-JETPACK="https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.3/release/Jetson_Linux_r36.4.3_aarch64.tbz2/"
-ROOTFS="https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.3/release/Tegra_Linux_Sample-Root-Filesystem_r36.4.3_aarch64.tbz2/"
-PUBLIC="https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.3/sources/public_sources.tbz2/"
-TOOLCHAIN="https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v3.0/toolchain/aarch64--glibc--stable-2022.08-1.tar.bz2"
 
 # source path env
 SRC_DIR="Linux_for_Tegra/source"
@@ -30,17 +25,36 @@ GCC_TOOL_CHAIN="${CUR_DIR}/${SRC_DIR}/kernel/gcc_tool_chain"
 BL_CFG="bootloader/generic/cfg"
 PIMNUX_DIR="bootloader/generic/BCT"
 
-get_nvidia_jetpack() {
-	if [ ${JP} == "jp621" ]; then
+get_sdk_url() {
+	# nvidia jetpack source code
+	TOOLCHAIN="https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v3.0/toolchain/aarch64--glibc--stable-2022.08-1.tar.bz2"
+	if [ ${JP} == "jp62" ]; then
+		JETPACK="https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.3/release/Jetson_Linux_r36.4.3_aarch64.tbz2/"
+		ROOTFS="https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.3/release/Tegra_Linux_Sample-Root-Filesystem_r36.4.3_aarch64.tbz2/"
+		PUBLIC="https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.3/sources/public_sources.tbz2/"
+		BRANCH_DT="tn_l4t-r36.4.3.ga_kernel-5.15"
+		TARGET_VERSION="36.4.3"
+	elif [ ${JP} == "jp621" ]; then
 		JETPACK="https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.4/release/Jetson_Linux_r36.4.4_aarch64.tbz2/"
 		ROOTFS="https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.4/release/Tegra_Linux_Sample-Root-Filesystem_r36.4.4_aarch64.tbz2/"
 		PUBLIC="https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.4/sources/public_sources.tbz2/"
 		BRANCH_DT="tn_l4t-r36.4.4.ga_kernel-5.15"
+		TARGET_VERSION="36.4.4"
 	fi
 
+}
+get_nvidia_jetpack() {
+	get_sdk_url
 	if [ -d "${CUR_DIR}/Linux_for_Tegra" ]; then
-		echo -ne "\n### Linux_for_Tegra folder exist. Skip download jetpack source code.\n"
-		return 0
+		source Linux_for_Tegra/nv_tegra/bsp_version
+		if [ "$BSP_VERSION" == "$TARGET_VERSION" ]; then
+			echo -ne "\n### Linux_for_Tegra folder exist. Skip download jetpack source code.\n"
+			return 0
+		else
+			echo -ne "\n [ERROR] codebase version is not matched with $JP !"
+			echo -ne "\n Please backup your changes and remove Linux_for_Tegra folder, then re-run command.\n\n"
+			exit 1
+		fi
 	fi
 	echo -ne "\n### Get nvidia jetpack source code\n"
 	wget $JETPACK -q --tries=10 --retry-connrefused --waitretry=5 --timeout=30 --read-timeout=60 --continue -O jetpack.tbz2
