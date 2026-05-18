@@ -312,7 +312,9 @@ mv_needed_files_for_demo_image(){
 	# copy script files
 	cd ${CUR_DIR}
 	sudo cp -rp tools/set_config.sh Linux_for_Tegra/rootfs/home/ubuntu/.
-	if [[ ${board_conf} == "jetson-orin-nano-devkit" ]]; then
+	if [[ ${board_conf} == tn-tek7* ]]; then
+		sudo cp -rp tools/stream_gmsl2_8cam_tek7000.sh Linux_for_Tegra/rootfs/home/ubuntu/.
+	elif [[ ${board_conf} == "jetson-orin-nano-devkit" ]]; then
 		sudo cp -rp tools/stream_gmsl2_8cam_w_ext_fsync_p15_orin_split.sh Linux_for_Tegra/rootfs/home/ubuntu/.
 	elif [[ ${board_conf} == "jetson-agx-orin-devkit" ]]; then
 		sudo cp -rp tools/stream_gmsl2_8cam_w_ext_fsync_p15_agx_split.sh Linux_for_Tegra/rootfs/home/ubuntu/.
