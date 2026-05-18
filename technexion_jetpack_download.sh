@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TIME=$(date +'%Y%m%d')
-CUR_DIR="$(pwd)/"
+export CUR_DIR="$(pwd)"
 NV_TAG="jetson_36.4.3"
 BRANCH="tn_l4t-r36.4.ga_kernel-5.15"
 # device tree branch
@@ -10,6 +10,7 @@ BRANCH_DT="tn_l4t-r36.4.3.ga_kernel-5.15"
 VALID_TAG=("r36.4.ga")
 VALID_JP=("jp62" "jp621")
 VALID_BOOT=("tevs-dual" "vls" "vls-gm2" "vls-gm2-fsync" "vls-gm2-tunnel" "vls-gm2-tunnel-fsync" "vls-gm2-fsync-external")
+VALID_BOOT_TN=("vls-gm2-8cam" "vls-gm2-4cam")
 
 USING_TAG=0
 
@@ -426,6 +427,11 @@ usage() {
 	echo "-v: jetpack version for sync code:" 1>&2
 	echo "${VALID_JP[@]}" 1>&2
 	echo "" 1>&2
+	echo "-d: boot config with device:" 1>&2
+	echo "TEK6040-ORIN-NANO| TEK6100-ORIN-NX: not need this option" 1>&2
+	echo "TEK7000-ORIN-NANO| TEK7000-ORIN-NX: ${VALID_BOOT_TN[@]}" 1>&2
+	echo "Jetson Evk series: ${VALID_BOOT[@]}" 1>&2
+	echo "" 1>&2
 	echo "--qspi-only: do not create/ flash rootfs, for qspi image only" 1>&2
 	echo "" 1>&2
 	echo "flash options: <--flash-only/--build-flash/--no-flash>" 1>&2
@@ -467,7 +473,6 @@ setup_env_vars () {
 }
 
 do_job () {
-	CUR_DIR="$(pwd)/"
 	get_nvidia_jetpack
 	run_nvidia_script_and_sync_code
 
@@ -540,7 +545,12 @@ while getopts ":b:t:v:d:-:" o; do
 		fi
 		;;
 	d)
-		for k in "${VALID_BOOT[@]}"; do
+		if [[ ${board_conf} == tn-tek7* ]]; then
+			VALID_LIST=(${VALID_BOOT_TN[@]})
+		else
+			VALID_LIST=(${VALID_BOOT[@]})
+		fi
+		for k in "${VALID_LIST[@]}"; do
 			if [[ "$k" == "${OPTARG}" ]]; then
 				d=${OPTARG}
 				break
@@ -548,7 +558,7 @@ while getopts ":b:t:v:d:-:" o; do
 		done
 		if [[ -z ${d} ]];then
 			echo -e "invalid device boot configuration option!!\n"
-			echo -e "Only support 'tevs-dual', 'vls', 'vls-gm2', 'vls-gm2-fsync', 'vls-gm2-tunnel', 'vls-gm2-tunnel-fsync' and 'vls-gm2-fsync-external'!!\n"
+			echo -e "Support list: ${VALID_LIST[@]} \n"
 			usage
 		fi
 		;;
@@ -570,7 +580,7 @@ while getopts ":b:t:v:d:-:" o; do
 			;;
 		*) usage allunknown 1; ;;
 		esac;;
-        *)
+	*)
 		usage
 		;;
 	esac
@@ -599,8 +609,16 @@ else
 fi
 
 if [ -z "${d}" ]; then
-	echo -e "### lack of device, using default vls-gm2."
-	DEV="vls-gm2"
+	if [[ ${board_conf} == tn-tek6* ]]; then
+		echo -e "### lack of device, using default primary boot lebel."
+		DEV=""
+	elif [[ ${board_conf} == tn-tek7* ]]; then
+		echo -e "### lack of device, using default vls-gm2-8cam boot lebel."
+		DEV="vls-gm2-8cam"
+	else
+		echo -e "### lack of device, using default vls-gm2 boot lebel."
+		DEV="vls-gm2"
+	fi
 else
 	echo "valid input: dev=$d"
 	DEV=$d
