@@ -544,18 +544,19 @@ create_demo_image (){
 
 usage() {
 	echo -e "$0 \ndownload the Technexion Jetpack -b <baseboard>" 1>&2
-	echo "-b: baseboard <TEK6040-ORIN-NANO/ TEK6100-ORIN-NX" 1>&2
+	echo "-b: baseboard <TEK6040-ORIN-NANO/ TEK6100-ORIN-NX/ TEK7000-ORIN-NANO/ TEK7000-ORIN-NX" 1>&2
 	echo "               JETSON-ORIN-NANO-EVK/ JETSON-AGX-ORIN-EVK>" 1>&2
 	echo "" 1>&2
-	echo "Jetson Orin series:" 1>&2
-	echo "  TEK6040-ORIN-NANO| TEK6100-ORIN-NX" 1>&2
+	echo "TN Orin series:" 1>&2
+	echo "  TEK6040-ORIN-NANO| TEK6100-ORIN-NX| TEK7000-ORIN-NANO| TEK7000-ORIN-NX" 1>&2
+	echo "Jetson Evk series:" 1>&2
 	echo "  JETSON-ORIN-NANO-EVK| JETSON-AGX-ORIN-EVK" 1>&2
 	echo "" 1>&2
 	echo "-t: tag for sync code:" 1>&2
 	echo "${VALID_TAG}" 1>&2
 	echo "" 1>&2
 	echo "-v: jetpack version for sync code:" 1>&2
-	echo "${VALID_JP}" 1>&2
+	echo "${VALID_JP[@]}" 1>&2
 	echo "" 1>&2
 	echo "--qspi-only: do not create/ flash rootfs, for qspi image only" 1>&2
 	echo "" 1>&2
@@ -565,16 +566,20 @@ usage() {
 }
 
 setup_env_vars () {
+	rootfs_dev=("NVMe" "USB")
+	rootfs_dev_p1=("nvme0n1p1" "sda1")
 	case $1 in
+		TEK7000-ORIN-NANO)
+			board_conf="tn-tek7000-orin-nano"
+			;;
+		TEK7000-ORIN-NX)
+			board_conf="tn-tek7000-orin-nx"
+			;;
 		TEK6040-ORIN-NANO)
 			board_conf="tn-tek6040-orin-nano"
-			rootfs_dev=("NVMe" "USB")
-			rootfs_dev_p1=("nvme0n1p1" "sda1")
 			;;
 		TEK6100-ORIN-NX)
 			board_conf="tn-tek6100-orin-nx"
-			rootfs_dev=("NVMe" "USB")
-			rootfs_dev_p1=("nvme0n1p1" "sda1")
 			;;
 		JETSON-ORIN-NANO-EVK)
 			board_conf="jetson-orin-nano-devkit"
@@ -650,6 +655,10 @@ while getopts ":b:t:v:d:-:" o; do
 		fi
 		;;
 	v)
+		if [[ ${board_conf} == tn-tek* ]]; then
+			echo -e "$board_conf only support with jp62, no need this option!!\n"
+			usage
+		fi
 		for k in "${VALID_JP[@]}"; do
 			if [[ "$k" == "${OPTARG}" ]]; then
 				v=${OPTARG}
@@ -707,14 +716,14 @@ fi
 echo valid input: b=$b
 
 if [ -z "${t}" ]; then
-	echo -e "### lack of tag, using lastest code.\n\n"
+	echo -e "### lack of tag, using lastest code."
 else
 	echo "valid input: t=$t"
 	TAG=$t
 fi
 
 if [ -z "${v}" ]; then
-	echo -e "### lack of jetpack, using default jp62.\n\n"
+	echo -e "### lack of jetpack, using default jp62."
 	JP="jp62"
 else
 	echo "valid input: jp=$v"
@@ -722,7 +731,7 @@ else
 fi
 
 if [ -z "${d}" ]; then
-	echo -e "### lack of device, using default vls-gm2.\n\n"
+	echo -e "### lack of device, using default vls-gm2."
 	DEV="vls-gm2"
 else
 	echo "valid input: dev=$d"
@@ -759,7 +768,7 @@ groff curl lzop asciidoc u-boot-tools libreoffice-writer \
 sshpass ssh-askpass zip xz-utils kpartx vim screen libssl-dev \
 abootimg nfs-kernel-server
 
-if [[ $(ssh -T -y git@github.com -o StrictHostKeyChecking=no; echo $?) -eq 1 ]];then
+if [[ $(ssh -T -y git@github.com -o StrictHostKeyChecking=no >/dev/null 2>&1; echo $?) -eq 1 ]];then
 	echo -e "check github HostKey success, using ssh to download code.\n"
 	GIT_URL="git@github.com:TechNexion-Vision"
 else
