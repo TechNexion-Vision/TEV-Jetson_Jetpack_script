@@ -47,7 +47,7 @@ sudo sed -i "s/^DEFAULT .*/DEFAULT $new_default/" "$CONF_FILE"
 
 if [ $? -eq 0 ]; then
 	echo "You should Reboot Device to enable $new_default."
-	read -p "Do you want to reboot now?[Y/n]" choice
+	read -p "Do you want to reboot now?[y/N]" choice
 	if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
 		echo "Rebooting...."
 		sudo reboot
