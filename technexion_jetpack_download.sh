@@ -436,7 +436,7 @@ usage() {
 	echo "" 1>&2
 	echo "--qspi-only: do not create/ flash rootfs, for qspi image only" 1>&2
 	echo "" 1>&2
-	echo "flash options: <--flash-only/--build-flash/--no-flash>" 1>&2
+	echo "flash options: <--flash-only/--build-flash/--no-flash/--massflash [<max_devices>]>" 1>&2
 	echo "" 1>&2
 	exit 1
 }
@@ -579,6 +579,13 @@ while getopts ":b:t:v:d:-:" o; do
 			;;
 		build-flash)
 			flash_opt=""
+			;;
+		massflash)
+			case "${!OPTIND}" in
+				*[!0-9]* | "");;
+				*) max_massflash="${!OPTIND}"; OPTIND=$((OPTIND + 1)) ;;
+			esac
+			flash_opt="--no-flash --massflash $max_massflash"
 			;;
 		*) usage allunknown 1; ;;
 		esac;;
