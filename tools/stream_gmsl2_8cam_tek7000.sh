@@ -141,7 +141,7 @@ for idx in $EXIST_IDX; do
 	valignment=top halignment=left font-desc="Sans, 24" ! \
 	queue ! nvvidconv ! "video/x-raw(memory:NVMM), format=NV12, width=$SINK_SIZE_X, height=$SINK_SIZE_Y" ! \
 	nv3dsink window-width=$SINK_SIZE_X window-height=$SINK_SIZE_Y \
-	window-x=$winx window-y=$winy sync=false --no-position &
+	window-x=$winx window-y=$winy sync=false --no-position 2>/dev/null &
 	
 	CAM_COUNT=$((CAM_COUNT+1))
     sleep 1
