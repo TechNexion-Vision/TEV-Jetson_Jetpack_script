@@ -7,7 +7,7 @@ BRANCH="tn_l4t-r36.4.ga_kernel-5.15"
 # device tree branch
 BRANCH_DT="tn_l4t-r36.4.3.ga_kernel-5.15"
 
-VALID_TAG=("r36.4.ga")
+VALID_TAG=("r36.4.ga" "r36.4.ga_tek7000")
 VALID_JP=("jp62" "jp621")
 VALID_BOOT=("tevs-dual" "vls" "vls-gm2" "vls-gm2-fsync" "vls-gm2-tunnel" "vls-gm2-tunnel-fsync" "vls-gm2-fsync-external")
 VALID_BOOT_TN=("vls-gm2-8cam" "vls-gm2-4cam")
@@ -424,7 +424,7 @@ usage() {
 	echo "  JETSON-ORIN-NANO-EVK| JETSON-AGX-ORIN-EVK" 1>&2
 	echo "" 1>&2
 	echo "-t: tag for sync code:" 1>&2
-	echo "${VALID_TAG}" 1>&2
+	echo "${VALID_TAG[@]}" 1>&2
 	echo "" 1>&2
 	echo "-v: jetpack version for sync code:" 1>&2
 	echo "${VALID_JP[@]}" 1>&2
